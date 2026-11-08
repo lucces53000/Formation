@@ -1,0 +1,136 @@
+MODE D'EMPLOI : AJOUTER UN ADMINISTRATEUR
+=========================================
+
+Un administrateur autorisé peut gérer les données Firestore et envoyer les
+notifications. L'adresse e-mail doit être vérifiée. La liste est contrôlée par
+l'interface, les règles Firestore et le Worker Cloudflare : la même adresse
+doit être ajoutée aux trois endroits.
+
+AVANT DE COMMENCER
+------------------
+
+- Utiliser l'adresse e-mail exacte du nouveau compte.
+- Les fichiers du projet sont dans :
+  C:\Users\Shadow\Documents\applis\Formation
+- Ne jamais envoyer de mot de passe ni de clé de compte de service.
+- Les étapes de déploiement ci-dessous publient les règles Firestore,
+  l'application Web et le Worker.
+
+1. CREER LE COMPTE FIREBASE
+---------------------------
+
+1. Ouvrir la console Firebase du projet "seec-2da03".
+2. Ouvrir Authentication > Users et créer un utilisateur avec l'adresse du
+   nouvel administrateur et un mot de passe temporaire.
+3. Envoyer le courriel de vérification ou utiliser le lien de vérification.
+4. Demander au nouvel administrateur d'ouvrir le lien et de changer son mot de
+   passe après sa première connexion.
+
+Le compte existant "luc.cesbron@sdis53.fr" reste autorisé. Ne pas supprimer ni
+remplacer cette adresse lors des étapes suivantes.
+
+2. AUTORISER L'ADRESSE DANS L'APPLICATION
+-----------------------------------------
+
+Dans app.js, chercher :
+
+  const adminEmails = ["luc.cesbron@sdis53.fr"];
+
+Ajouter l'adresse en minuscules entre guillemets, en conservant l'adresse
+existante. Exemple :
+
+  const adminEmails = [
+    "luc.cesbron@sdis53.fr",
+    "nouvel.admin@sdis53.fr"
+  ];
+
+Remplacer "nouvel.admin@sdis53.fr" par l'adresse réelle du compte. Séparer
+chaque adresse par une virgule.
+
+3. AUTORISER L'ADRESSE DANS FIRESTORE
+-------------------------------------
+
+Dans firestore.rules, la fonction isAdmin() contient la liste :
+
+  && request.auth.token.email in [
+    "luc.cesbron@sdis53.fr"
+  ];
+
+Ajouter la même adresse en minuscules dans cette liste, sans retirer le compte
+existant. Les règles continuent d'exiger une session authentifiée et une
+adresse vérifiée.
+
+4. AUTORISER L'ENVOI DES NOTIFICATIONS
+--------------------------------------
+
+Le Worker vérifie lui-même le jeton Firebase. La vérification du navigateur ne
+suffit pas à autoriser l'envoi.
+
+1. Ouvrir Cloudflare > Workers & Pages > le Worker "wild-sky-abe4".
+2. Dans Settings > Variables and Secrets, ajouter ou modifier la variable texte
+   ADMIN_EMAILS.
+3. Mettre toutes les adresses autorisées, séparées par des virgules, en
+   conservant l'adresse existante. Exemple :
+
+  luc.cesbron@sdis53.fr,nouvel.admin@sdis53.fr
+
+   Remplacer "nouvel.admin@sdis53.fr" par l'adresse réelle.
+4. Publier la variable.
+5. Ouvrir le Worker et remplacer son code par le contenu à jour de
+   cloudflare-worker.js, puis déployer le Worker.
+
+Le Worker accepte également l'ancien paramètre ADMIN_EMAIL si ADMIN_EMAILS
+n'est pas défini. Pour plusieurs comptes, utiliser ADMIN_EMAILS. Conserver les
+autres variables/secrets du Worker (FIREBASE_API_KEY, FIREBASE_PROJECT_ID,
+ALLOWED_ORIGINS et FIREBASE_SERVICE_ACCOUNT) sans les modifier. Ne jamais
+remplacer ni afficher FIREBASE_SERVICE_ACCOUNT pour ajouter un utilisateur.
+
+5. DEPLOYER LES CHANGEMENTS FIREBASE
+------------------------------------
+
+Ouvrir PowerShell et exécuter :
+
+  Set-Location 'C:\Users\Shadow\Documents\applis\Formation'
+  firebase deploy --only firestore:rules --project seec-2da03
+  firebase deploy --only hosting --project seec-2da03
+
+Les deux commandes doivent se terminer sans erreur. Si la commande firebase
+n'est pas reconnue, ouvrir un terminal où Firebase CLI est installé et
+authentifié sur le projet "seec-2da03".
+
+6. TESTER LE NOUVEAU COMPTE
+---------------------------
+
+1. Attendre la fin des déploiements, puis ouvrir l'URL de l'administration.
+2. Se déconnecter du compte actuel et se connecter avec le nouveau compte.
+3. Vérifier que l'adresse est confirmée dans Firebase Authentication.
+4. Vérifier que le statut de l'administration indique que les données sont
+   chargées ; essayer une modification non destructive puis l'annuler si
+   nécessaire.
+5. Dans Annonces & Notifications, envoyer une notification de test. Vérifier
+   que l'administration confirme l'acceptation par FCM et qu'un appareil Android
+   abonné au sujet "announcements" la reçoit.
+6. Tester également une annonce si nécessaire. Une notification d'annonce est
+   envoyée à la création d'une nouvelle annonce, pas lors de sa modification.
+
+FCM confirme que le message a été accepté, mais ne donne pas le nombre
+d'appareils qui l'ont effectivement reçu.
+
+EN CAS D'ECHEC
+--------------
+
+- "Accès Firestore refusé" : vérifier l'adresse exacte dans app.js et
+  firestore.rules, vérifier que l'adresse est confirmée, puis contrôler le
+  déploiement Firestore et Hosting.
+- L'annonce est enregistrée mais la notification échoue, ou l'envoi autonome
+  est refusé : vérifier l'adresse dans ADMIN_EMAILS, le code déployé du Worker
+  et son dernier déploiement Cloudflare.
+- Erreur FCM 403 : vérifier le rôle IAM déjà accordé au compte de service
+  Cloudflare ; l'ajout d'un administrateur Firebase ne nécessite pas de changer
+  ce rôle.
+- Ne pas rendre les règles Firestore publiques pour corriger un refus d'accès.
+
+Pour retirer plus tard un administrateur, supprimer son adresse des trois
+listes (app.js, firestore.rules et ADMIN_EMAILS), puis redéployer Firestore,
+Hosting et le Worker. Supprimer/désactiver aussi son compte dans Firebase
+Authentication.

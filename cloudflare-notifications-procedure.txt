@@ -1,0 +1,265 @@
+PROCEDURE : NOTIFICATIONS ANDROID VIA CLOUDFLARE WORKERS
+========================================================
+
+Objectif
+--------
+
+Envoyer automatiquement une notification à l'application Android lorsqu'une
+nouvelle annonce est créée dans l'administration, sans passer le projet
+Firebase au forfait Blaze.
+
+Le Worker Cloudflare sert de relais sécurisé entre l'administration et Firebase
+Cloud Messaging (FCM). Les notifications sont envoyées au sujet FCM
+"announcements".
+
+Ne jamais partager ni publier le fichier JSON de clé privée du compte de
+service Firebase. Il donne au serveur des droits d'envoi et doit rester un
+secret stocké côté Cloudflare.
+
+
+1. CREER LE WORKER CLOUDFLARE
+-----------------------------
+
+1. Créer ou ouvrir un compte sur https://dash.cloudflare.com/
+2. Ouvrir "Workers & Pages".
+3. Choisir "Create" puis "Create Worker".
+4. Le Worker "wild-sky-abe4" existe déjà et son URL est :
+   https://wild-sky-abe4.cesbronluc.workers.dev/
+5. Remplacer le code du Worker dans l'éditeur Cloudflare par le contenu à jour
+   de cloudflare-worker.js situé dans le projet Formation, puis redéployer.
+   Le Worker est utilisé pour les notifications et pour lire les calendriers
+   ICS des agents sans exposer leurs URL au navigateur.
+
+Le forfait gratuit Workers comprend actuellement une limite de 100 000
+requêtes par jour. Vérifier les quotas et conditions à jour dans la
+documentation Cloudflare :
+https://developers.cloudflare.com/workers/platform/limits/
+
+
+2. AUTORISER FCM POUR LE COMPTE DE SERVICE
+------------------------------------------
+
+Dans la console Google Cloud du projet Firebase "seec-2da03" :
+
+1. Sélectionner le projet "seec-2da03" dans le sélecteur de projet en haut de
+   la console Google Cloud. Vérifier l'ID du projet, et pas seulement son nom.
+2. Activer l'API FCM :
+   a. Ouvrir "APIs et services" > "Bibliothèque".
+   b. Rechercher "Firebase Cloud Messaging API" (service fcm.googleapis.com).
+   c. Ouvrir la fiche et cliquer "Activer". Si la page indique déjà que l'API
+      est activée, ne rien modifier.
+3. Vérifier quel compte de service est utilisé par le Worker :
+   a. Dans la clé JSON déjà enregistrée comme secret Cloudflare
+      FIREBASE_SERVICE_ACCOUNT, relever localement la valeur "client_email".
+      Ne pas copier le JSON ou sa clé privée dans une conversation.
+   b. Ce courriel doit désigner le compte de service auquel le rôle sera
+      accordé. Dans la capture IAM fournie, une entrée "cloudflare" apparaît
+      avec l'adresse cloudflare@seec-2da03.iam.gserviceaccount.com ; vérifier
+      que c'est bien le même "client_email" que dans le secret.
+4. Accorder le rôle au compte de service :
+   a. Dans la console Google Cloud, ouvrir "IAM et administration" > "IAM".
+   b. Vérifier une nouvelle fois que le projet sélectionné est "seec-2da03".
+   c. Cliquer "Accorder l'accès" (ou "Grant access").
+   d. Dans "Nouveaux principaux", saisir exactement le courriel "client_email"
+      relevé à l'étape précédente.
+   e. Dans "Attribuer des rôles", rechercher et sélectionner
+      "Firebase Cloud Messaging API Admin" (l'intitulé peut être traduit ;
+      rôle IAM roles/firebasecloudmessaging.admin). C'est le rôle qui a permis
+      de faire fonctionner l'envoi dans cette configuration.
+      Ne pas le confondre avec "Firebase In-App Messaging Admin" (ou
+      "Administrateur de messagerie dans l'application Firebase (bêta)") :
+      ce rôle concerne les messages intégrés à l'application, pas l'envoi
+      FCM HTTP v1. Ne pas choisir non plus "Owner", "Éditeur" ou un rôle
+      général plus large.
+   f. Cliquer "Enregistrer". Dans la liste IAM du projet, confirmer que le
+      courriel du compte apparaît avec ce rôle.
+   g. Si ce compte possède déjà ce rôle, ne pas créer une attribution en
+      double. Ouvrir le détail du rôle existant et vérifier son nom et son
+      étendue : l'attribution doit concerner le projet "seec-2da03".
+5. Si le compte de service n'existe pas encore, le créer dans "IAM et
+   administration" > "Comptes de service", puis appliquer les étapes 3 et 4.
+   Une clé JSON n'est nécessaire que si aucune clé correspondante n'existe
+   déjà pour le secret Cloudflare.
+6. Après toute modification IAM, attendre quelques minutes la propagation,
+   puis refaire un test d'envoi depuis l'administration. Les permissions ne
+   changent pas la clé JSON et ne nécessitent pas de modifier sa valeur dans
+   Cloudflare.
+7. Conserver toute clé JSON en lieu sûr. Ne pas l'ajouter au dépôt Git, au
+   code public ou à un fichier de configuration versionné, et ne jamais
+   transmettre sa clé privée.
+
+Documentation officielle FCM HTTP v1 :
+https://firebase.google.com/docs/cloud-messaging/send/v1-api
+
+
+3. ENREGISTRER LES SECRETS DANS CLOUDFLARE
+------------------------------------------
+
+Dans le Worker Cloudflare, ouvrir Settings > Variables and Secrets et ajouter
+les variables suivantes :
+
+- FIREBASE_API_KEY : valeur apiKey de firebase-config.js. Cette clé Web est
+  publique, mais elle doit correspondre au projet Firebase utilisé.
+- FIREBASE_PROJECT_ID : seec-2da03.
+- ADMIN_EMAILS : liste des adresses administrateur vérifiées autorisées,
+  séparées par des virgules. Exemple :
+  luc.cesbron@sdis53.fr,nouvel.admin@sdis53.fr
+  Remplacer le deuxième exemple par l'adresse réelle. L'ancien paramètre
+  ADMIN_EMAIL reste accepté pour une seule adresse, mais utiliser ADMIN_EMAILS
+  dès qu'il y a plusieurs administrateurs.
+- ALLOWED_ORIGINS : liste d'origines autorisées séparées par des virgules.
+  Valeurs de départ :
+  https://seec-2da03.web.app,https://seec-2da03.firebaseapp.com
+  Ajouter l'origine exacte du domaine de production s'il est différent.
+  Pour les tests locaux, ajouter par exemple
+  http://127.0.0.1:8000,http://localhost:8000.
+
+Ajouter séparément comme secret (type Secret) :
+
+- FIREBASE_SERVICE_ACCOUNT : contenu JSON complet du fichier de clé du compte
+  de service Firebase. Ne pas ajouter ce contenu au dépôt ou au code source.
+
+Les secrets sont accessibles au Worker sans être intégrés à son code source.
+Ne pas placer la clé privée dans "wrangler.toml", dans un fichier versionné ou
+dans le JavaScript du site.
+
+Documentation Cloudflare sur les secrets :
+https://developers.cloudflare.com/workers/configuration/secrets/
+
+
+4. SECURISER LE POINT D'ENVOI
+-----------------------------
+
+Le Worker ne doit pas accepter une demande simplement parce qu'elle vient du
+site Web. Il doit :
+
+1. Recevoir le jeton d'identification Firebase de l'utilisateur connecté.
+2. Vérifier côté serveur que le jeton est valide et non expiré.
+3. Vérifier que l'adresse de l'utilisateur figure dans ADMIN_EMAILS et que son
+   adresse e-mail est vérifiée.
+4. Refuser les demandes non authentifiées ou non autorisées.
+5. Envoyer à FCM le titre et le message vers le sujet "announcements".
+
+La vérification du jeton Firebase doit être faite côté serveur :
+https://firebase.google.com/docs/auth/admin/verify-id-tokens
+
+CORS seul n'est pas une protection d'authentification.
+
+
+5. RELIER L'ADMINISTRATION AU WORKER
+------------------------------------
+
+Après l'enregistrement d'une nouvelle annonce, le code d'administration appelle
+l'URL HTTPS du Worker et lui transmet le jeton Firebase de l'administrateur,
+le titre, le message, le type et l'identifiant de l'annonce. Les types
+disponibles dans l'administration sont AJOUT, ANNULATION, MODIFICATION et
+INFORMATION. Le type est inclus dans les données FCM comme "announcementType";
+le champ "type" reste le marqueur général "announcement".
+
+Le Worker effectuera l'envoi FCM au sujet "announcements".
+
+Le même Worker fournit aussi l'action `agent_occupations` à la page
+`agent-calendar.html`. Cette action exige un jeton Firebase valide, une adresse
+vérifiée exactement égale à `luc.cesbron@sdis53.fr`, et n'accepte que des URL
+HTTPS `agatt.sdis53.fr` de la forme `/calendrier/<id>/<jeton>/occupation.ics`.
+Elle renvoie les occupations suivies par la page avec une empreinte du flux
+ICS. La page conserve ces occupations et l'état de synchronisation dans les
+collections privées Firestore `agentOccupations` et `agentCalendarSync` ;
+elles sont relues à l'ouverture, puis les flux ne sont vérifiés qu'au plus
+une fois par jour, sauf synchronisation manuelle. La page envoie au Worker
+des lots de 50 calendriers maximum afin de permettre la gestion de plus de
+50 agents. L'empreinte permet de ne pas réécrire les occupations si le flux
+n'a pas changé. Les règles Firestore
+protègent séparément ces collections ainsi que `agentCalendars`. Pour activer
+cette page, publier les nouvelles règles Firestore et redéployer le Worker
+mis à jour ; aucune Cloud Function Firebase n'est utilisée.
+En cas d'erreur sur un agent, la page indique maintenant le statut HTTP
+retourné par AGATT ou un échec de connexion depuis Cloudflare. Les journaux du
+Worker précisent l'agent et le motif sans enregistrer son URL ICS privée.
+
+Comportement prévu :
+
+- Nouvelle annonce : envoyer une notification.
+- Modification d'une annonce existante : ne pas envoyer de notification.
+- Si l'annonce est enregistrée, mais que l'envoi échoue, l'administration doit
+  signaler clairement cet échec sans prétendre que la notification est partie.
+- L'onglet "Notifications" permet d'envoyer un titre et un texte sans créer
+  d'annonce Firestore. Le Worker envoie cette notification aux appareils
+  Android abonnés au sujet "announcements". Le résultat indique si FCM a
+  accepté la demande ; FCM ne fournit pas le nombre d'appareils destinataires.
+  Aucun historique de ces envois n'est conservé.
+
+
+6. VERIFIER L'ABONNEMENT DE L'APPLICATION ANDROID
+-------------------------------------------------
+
+L'abonnement au sujet FCM "announcements" a été ajouté dans MainActivity.kt :
+
+FirebaseMessaging.getInstance().subscribeToTopic("announcements")
+
+Il est effectué au démarrage de l'application. Il faudra construire et publier
+une nouvelle version Android pour que les appareils installent ce changement.
+
+Vérifier également :
+
+- que le service de réception Android est déclaré et fonctionne ;
+- que le Worker envoie un message FCM de données : le service Android peut
+  alors afficher lui-même la notification avec le logo complet de l'application
+  en grande icône et une icône monochrome adaptée dans la barre d'état ;
+- que l'application demande la permission de notifications sur Android 13 et
+  versions ultérieures ;
+- que le service affiche bien la notification reçue.
+
+Après toute modification du service ou des icônes Android, construire et
+installer une nouvelle version de l'application. Le logo visible dans les
+notifications ne peut pas être modifié à distance sur une version déjà
+installée.
+
+Documentation FCM pour les sujets :
+https://firebase.google.com/docs/cloud-messaging/send-message#send-messages-to-topics
+
+
+7. TESTER ET DEPLOYER
+---------------------
+
+Avant le déploiement définitif :
+
+1. Vérifier qu'un appel sans jeton ou avec un compte non autorisé est refusé.
+2. Vérifier qu'un nouvel ajout d'annonce avec le compte administrateur autorisé
+   déclenche un envoi FCM réussi.
+3. Vérifier que l'appareil Android abonné au sujet "announcements" reçoit la
+   notification.
+4. Depuis `agent-calendar.html`, vérifier qu'un compte différent de
+   `luc.cesbron@sdis53.fr` ne peut ni lire ni modifier la collection
+   `agentCalendars`, `agentCalendarSync` ou `agentOccupations`, puis tester
+   une synchronisation ICS, le chargement depuis Firestore et une synchronisation
+   manuelle.
+5. Déployer le Worker mis à jour dans Cloudflare et déployer les règles et
+   l'hébergement Firebase avec
+   `firebase deploy --only firestore:rules,hosting --project seec-2da03`.
+6. Construire et publier une nouvelle version Android pour intégrer
+   l'abonnement au sujet FCM.
+
+Avec cette architecture, le projet Firebase peut rester sur Spark : l'exécution
+du point d'envoi est effectuée par Cloudflare. Les identifiants FCM restent
+stockés côté serveur dans les secrets Cloudflare.
+
+La notification ne sera envoyée que si le Worker est déployé, si ses secrets
+sont correctement définis, si l'appel est authentifié et si l'application
+Android est abonnée au sujet FCM.
+
+En cas d'erreur HTTP 502 avec "FCM send failed" dans les journaux Cloudflare,
+consulter aussi le code et le message détaillé enregistrés par le Worker.
+Pour une erreur 403, vérifier que l'API Firebase Cloud Messaging est activée
+dans le projet cible et que l'adresse client_email du compte de service stocké
+dans FIREBASE_SERVICE_ACCOUNT possède le rôle "Firebase Cloud Messaging API
+Admin" sur le projet indiqué par FIREBASE_PROJECT_ID (ici seec-2da03).
+
+
+INFORMATIONS A TRANSMETTRE POUR L'INTEGRATION
+---------------------------------------------
+
+Une fois le Worker créé, l'URL publique HTTPS peut être transmise pour
+configurer l'administration et finaliser l'intégration Android.
+
+Ne transmettre en aucun cas la clé JSON privée du compte de service.

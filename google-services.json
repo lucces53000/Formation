@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "939717854640",
+    "project_id": "seec-2da03",
+    "storage_bucket": "seec-2da03.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:939717854640:android:ad68b134895a91b66b4275",
+        "android_client_info": {
+          "package_name": "fr.sdis53.paf"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2b61WL4WeJrJ05jj3nG2xM9vvv124Eak"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

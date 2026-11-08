@@ -1,0 +1,139 @@
+.catalog-versions-main {
+  width: min(1050px, calc(100% - 2rem));
+}
+
+.catalog-versions-workspace {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.catalog-versions-intro,
+.catalog-version-list-section,
+.catalog-version-create-form,
+.review-link-result {
+  border: 1px solid #dce2eb;
+  border-radius: 12px;
+  padding: clamp(1rem, 3vw, 1.6rem);
+  background: #fff;
+  box-shadow: 0 3px 14px rgb(22 42 73 / 5%);
+}
+
+.catalog-versions-intro {
+  border-top: 5px solid #205b98;
+}
+
+.catalog-versions-intro h2 {
+  margin-bottom: 0.5rem;
+}
+
+.catalog-versions-intro > p:last-child,
+.catalog-version-list-section > p {
+  margin-bottom: 0;
+  color: #647086;
+}
+
+.catalog-version-create-form {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.7fr) minmax(15rem, 1.3fr) auto;
+  align-items: end;
+  gap: 1rem;
+}
+
+.catalog-version-create-form .field {
+  margin: 0;
+}
+
+.catalog-version-list-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.catalog-version-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.catalog-version-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 1rem;
+  border: 1px solid #dce2eb;
+  border-radius: 10px;
+  padding: 1rem;
+  background: #fff;
+}
+
+.catalog-version-card h3 {
+  margin: 0 0 0.4rem;
+  overflow-wrap: anywhere;
+}
+
+.catalog-version-card p {
+  margin: 0.3rem 0;
+  color: #59667b;
+}
+
+.catalog-version-card .version-status {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  color: #183b68;
+  background: #eaf1fa;
+  font-weight: 650;
+}
+
+.catalog-version-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.review-link-result {
+  display: grid;
+  gap: 0.7rem;
+  border-color: #9cc5a5;
+  background: #f0f8f1;
+}
+
+.review-link-result[hidden] {
+  display: none;
+}
+
+.review-link-result p {
+  margin: 0;
+}
+
+.review-link-result a {
+  overflow-wrap: anywhere;
+}
+
+body.catalog-version-editor-mode #admin-page-title {
+  color: #183b68;
+}
+
+body.catalog-version-editor-mode #catalog-link,
+body.catalog-version-editor-mode #catalog-manager-link,
+body.catalog-version-editor-mode #agent-calendar-link,
+body.catalog-version-editor-mode .tab[data-tab="venue-calendar"],
+body.catalog-version-editor-mode .tab[data-tab="communications"],
+body.catalog-version-editor-mode .tab[data-tab="venue-statistics"],
+body.catalog-version-editor-mode .maintenance-settings {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .catalog-version-create-form {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-version-card {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-version-actions {
+    justify-content: flex-start;
+  }
+}

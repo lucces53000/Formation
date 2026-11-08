@@ -1,0 +1,245 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          "luc.cesbron@sdis53.fr",
+          "formation@sdis53.fr"
+        ];
+    }
+
+    function isAgentCalendarAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == "luc.cesbron@sdis53.fr";
+    }
+
+    function catalogueWritesAllowed() {
+      let pointerPath = /databases/$(database)/documents/siteSettings/catalogue;
+      let pointer = exists(pointerPath) ? get(pointerPath).data : {};
+      let pointerAfter = existsAfter(pointerPath) ? getAfter(pointerPath).data : {};
+      return !("publicationLockToken" in pointer)
+        || !(pointer.publicationLockExpiresAt is timestamp)
+        || pointer.publicationLockExpiresAt <= request.time
+        || !("publicationLockToken" in pointerAfter);
+    }
+
+    function isValidAgentCalendarEntry() {
+      return request.resource.data.keys().hasOnly(["firstName", "lastName", "status", "formateurCaisson", "icsUrl"])
+        && request.resource.data.firstName is string
+        && request.resource.data.firstName.size() > 0
+        && request.resource.data.firstName.size() <= 100
+        && request.resource.data.lastName is string
+        && request.resource.data.lastName.size() > 0
+        && request.resource.data.lastName.size() <= 100
+        && request.resource.data.status in ["SPP", "SPV"]
+        && (!("formateurCaisson" in request.resource.data.keys()) || request.resource.data.formateurCaisson is bool)
+        && request.resource.data.icsUrl is string
+        && request.resource.data.icsUrl.size() <= 2048;
+    }
+
+    match /agentCalendars/{agentId} {
+      allow read, delete: if isAgentCalendarAdmin();
+      allow create, update: if isAgentCalendarAdmin() && isValidAgentCalendarEntry();
+    }
+
+    match /agentCalendarSync/{agentId} {
+      allow read, delete: if isAgentCalendarAdmin();
+    }
+
+    match /agentOccupations/{occupationId} {
+      allow read, delete: if isAgentCalendarAdmin();
+    }
+
+    match /siteSettings/{settingId} {
+      allow get: if settingId == "public" || (settingId == "catalogue" && isAdmin());
+      allow create, update: if settingId == "public"
+        && isAdmin()
+        && request.resource.data.keys().hasOnly(["maintenance", "updatedAt"])
+        && request.resource.data.maintenance is bool
+        && request.resource.data.updatedAt is int;
+      allow create, update: if settingId == "catalogue"
+        && isAdmin()
+        && request.resource.data.keys().hasOnly([
+          "activeVersionId", "archiveId", "updatedAt", "restoredFromArchiveId", "restoredBy",
+          "publicationLockToken", "publicationLockExpiresAt"
+        ])
+        && request.resource.data.activeVersionId is string
+        && request.resource.data.updatedAt == request.time
+        && (("publicationLockToken" in request.resource.data.keys())
+          == ("publicationLockExpiresAt" in request.resource.data.keys()))
+        && (!("publicationLockToken" in request.resource.data.keys())
+          || (request.resource.data.publicationLockToken is string
+            && request.resource.data.publicationLockExpiresAt is timestamp));
+    }
+
+    match /trainings/{trainingId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && catalogueWritesAllowed()
+        && (!("published" in request.resource.data.keys()) || request.resource.data.published is bool);
+      allow delete: if isAdmin() && catalogueWritesAllowed();
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /trainingCategories/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() && catalogueWritesAllowed();
+    }
+
+    match /trainingLocations/{locationId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() && catalogueWritesAllowed();
+    }
+
+    match /trainingContacts/{contactId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() && catalogueWritesAllowed();
+    }
+
+    match /importantInformation/{informationId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() && catalogueWritesAllowed();
+    }
+
+    match /importantInformationCategories/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() && catalogueWritesAllowed();
+    }
+
+    match /catalogVersions/{versionId} {
+      function isReviewerDecision() {
+        let linkPath = /databases/$(database)/documents/catalogReviewLinks/$(resource.data.reviewLinkId);
+        return request.auth == null
+          && resource.data.status == "in_review"
+          && request.resource.data.status in ["approved", "corrections_requested"]
+          && request.resource.data.lastReviewDecision == request.resource.data.status
+          && request.resource.data.lastReviewComment is string
+          && request.resource.data.lastReviewComment.size() <= 2000
+          && request.resource.data.reviewedAt == request.time
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "status", "lastReviewDecision", "lastReviewComment", "reviewedAt", "updatedAt"
+          ])
+          && get(linkPath).data.versionId == versionId
+          && get(linkPath).data.status == "in_review"
+          && getAfter(linkPath).data.status == request.resource.data.status
+          && getAfter(linkPath).data.lastReviewDecision == request.resource.data.lastReviewDecision
+          && getAfter(linkPath).data.lastReviewComment == request.resource.data.lastReviewComment;
+      }
+
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.status == "creating"
+        && request.resource.data.year is int
+        && request.resource.data.year >= 2000
+        && request.resource.data.year <= 2200
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 100
+        && request.resource.data.reviewLinkId is string;
+      allow update: if isAdmin() || isReviewerDecision();
+      allow delete: if isAdmin() && resource.data.status == "deleting";
+
+      match /records/{collectionName}/items/{recordId} {
+        function versionCanBeEdited() {
+          return isAdmin()
+            && get(/databases/$(database)/documents/catalogVersions/$(versionId)).data.status
+              in ["creating", "draft", "corrections_requested"];
+        }
+
+        allow read: if isAdmin();
+        allow create, update: if versionCanBeEdited()
+          && collectionName in [
+            "trainings",
+            "trainingCategories",
+            "trainingLocations",
+            "trainingContacts",
+            "importantInformation",
+            "importantInformationCategories"
+          ];
+        allow delete: if isAdmin()
+          && get(/databases/$(database)/documents/catalogVersions/$(versionId)).data.status
+          in ["creating", "draft", "corrections_requested", "deleting"]
+          && collectionName in [
+            "trainings",
+            "trainingCategories",
+            "trainingLocations",
+            "trainingContacts",
+            "importantInformation",
+            "importantInformationCategories"
+          ];
+      }
+    }
+
+    match /catalogReviewLinks/{code} {
+      function reviewerCanRead() {
+        return resource.data.status == "in_review"
+          && resource.data.expiresAt is timestamp
+          && resource.data.expiresAt > request.time;
+      }
+
+      function isReviewerDecision() {
+        let versionPath = /databases/$(database)/documents/catalogVersions/$(resource.data.versionId);
+        return request.auth == null
+          && resource.data.status == "in_review"
+          && resource.data.expiresAt is timestamp
+          && resource.data.expiresAt > request.time
+          && request.resource.data.status in ["approved", "corrections_requested"]
+          && request.resource.data.lastReviewDecision == request.resource.data.status
+          && request.resource.data.lastReviewComment is string
+          && request.resource.data.lastReviewComment.size() <= 2000
+          && request.resource.data.reviewedAt == request.time
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "status", "lastReviewDecision", "lastReviewComment", "reviewedAt", "updatedAt"
+          ])
+          && get(versionPath).data.status == "in_review"
+          && get(versionPath).data.reviewLinkId == code
+          && getAfter(versionPath).data.status == request.resource.data.status
+          && getAfter(versionPath).data.lastReviewDecision == request.resource.data.lastReviewDecision
+          && getAfter(versionPath).data.lastReviewComment == request.resource.data.lastReviewComment;
+      }
+
+      allow get: if isAdmin() || reviewerCanRead();
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.status == "creating"
+        && request.resource.data.versionId is string
+        && request.resource.data.expiresAt is timestamp;
+      allow update: if isAdmin() || isReviewerDecision();
+      allow delete: if isAdmin() && resource.data.status == "deleting";
+
+      match /records/{collectionName}/items/{recordId} {
+        function reviewIsReadable() {
+          let link = get(/databases/$(database)/documents/catalogReviewLinks/$(code)).data;
+          return link.status == "in_review"
+            && link.expiresAt is timestamp
+            && link.expiresAt > request.time;
+        }
+
+        allow read: if isAdmin() || reviewIsReadable();
+        allow create, update: if isAdmin()
+          && get(/databases/$(database)/documents/catalogReviewLinks/$(code)).data.status
+            in ["creating", "draft", "corrections_requested"];
+        allow delete: if isAdmin()
+          && get(/databases/$(database)/documents/catalogReviewLinks/$(code)).data.status == "deleting";
+      }
+    }
+
+    match /catalogArchives/{archiveId} {
+      allow read, write: if isAdmin();
+
+      match /records/{collectionName}/items/{recordId} {
+        allow read, write: if isAdmin();
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

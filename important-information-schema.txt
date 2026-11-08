@@ -1,0 +1,114 @@
+STRUCTURE FIRESTORE : INFORMATIONS IMPORTANTES
+================================================
+
+Les informations importantes du catalogue sont enregistrées dans deux
+collections Firestore :
+
+1. importantInformationCategories
+2. importantInformation
+
+Les identifiants des documents sont générés automatiquement par l'administration.
+Chaque information référence sa catégorie par l'identifiant du document de
+importantInformationCategories.
+
+
+COLLECTION : importantInformationCategories
+--------------------------------------------
+
+Chaque document représente une catégorie d'informations.
+
+Champs :
+
+- name (string, obligatoire)
+  Nom de la catégorie, par exemple « Sport ».
+
+- order (number, entier)
+  Position de la catégorie dans la liste. La première position est 0.
+  L'ordre est modifiable par glisser-déposer dans l'administration.
+
+- color (string, couleur hexadécimale)
+  Couleur de la catégorie, par exemple « #198754 ».
+
+Exemple de document :
+
+{
+  "name": "Sport",
+  "order": 0,
+  "color": "#198754"
+}
+
+
+COLLECTION : importantInformation
+---------------------------------
+
+Chaque document représente une date, un texte ou un rappel.
+
+Champs :
+
+- categoryId (string, obligatoire)
+  Identifiant du document associé dans importantInformationCategories.
+
+- title (string, obligatoire)
+  Titre de l'information, par exemple « Cross départemental ».
+
+- type (string)
+  Type d'information. Valeurs utilisées :
+  - "date" : dates ou événement
+  - "text" : texte informatif
+  - "reminder" : rappel important
+
+- description (string)
+  Détail ou consigne. Peut être vide.
+
+- dates (array d'objets)
+  Liste des dates et lieux associés. Peut être vide.
+  Chaque objet comprend :
+  - date (string) : date au format ISO YYYY-MM-DD. Chaîne vide si la date est
+    à définir.
+  - label (string) : libellé facultatif.
+  - location (string) : lieu facultatif.
+
+- recurrence (string)
+  Récurrence ou précision de date, par exemple « Toutes les semaines paires ».
+  Peut être vide.
+
+- published (boolean)
+  true pour afficher l'information sur le catalogue public ; false pour la
+  masquer sans supprimer le document.
+
+- order (number, entier)
+  Position de l'information dans sa catégorie. La première position est 0.
+  L'ordre est modifiable par glisser-déposer dans l'administration.
+
+Exemple de document :
+
+{
+  "categoryId": "ID_DU_DOCUMENT_DE_CATEGORIE",
+  "title": "Cross départemental",
+  "type": "date",
+  "description": "",
+  "dates": [
+    {
+      "date": "2027-01-30",
+      "label": "",
+      "location": "Ballé"
+    }
+  ],
+  "recurrence": "",
+  "published": true,
+  "order": 0
+}
+
+
+NOTES
+-----
+
+- Les collections apparaissent dans Firestore à l'enregistrement de leur
+  premier document ; elles n'ont pas besoin d'être créées manuellement.
+- Les catégories sont affichées selon leur champ order.
+- Les informations sont affichées selon leur champ order à l'intérieur de
+  leur catégorie.
+- Les informations masquées (published: false) restent enregistrées dans
+  Firestore et ne sont pas affichées dans le catalogue public.
+- Une catégorie ne peut pas être supprimée tant qu'elle contient des
+  informations.

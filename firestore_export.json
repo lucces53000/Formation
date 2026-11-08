@@ -1,0 +1,291 @@
+{
+  "trainings": {
+    "SAP-01": {
+      "id": "SAP-01",
+      "title": "Équipier Secours à Personnes (PSE 1)",
+      "category": "Secours à Personnes",
+      "subCategory": "Opérationnel",
+      "summary": "Apprentissage des gestes de premiers secours en équipe et manipulation du matériel de réanimation d'urgence.",
+      "duration": "3 jours (24h)",
+      "prerequisites": "• PSC1 ou équivalent à jour\n• Aptitude médicale opérationnelle sapeur-pompier",
+      "observations": "Présence obligatoire à l'intégralité des sessions. Évaluation continue et certificative en fin de stage.",
+      "phases": [
+        {
+          "phaseTitle": "Phase 1 : Enseignement Théorique et Technique",
+          "sessions": [
+            {
+              "sessionName": "Session 1",
+              "dates": "15-17 Janvier 2025",
+              "location": "CIS Laval"
+            },
+            {
+              "sessionName": "Session 2",
+              "dates": "22-24 Janvier 2025",
+              "location": "CIS Mayenne"
+            }
+          ]
+        },
+        {
+          "phaseTitle": "Phase 2 : Cas Concrets et Certification",
+          "sessions": [
+            {
+              "sessionName": "Session 1",
+              "dates": "10-12 Avril 2025",
+              "location": "CIS Laval"
+            },
+            {
+              "sessionName": "Session 2",
+              "dates": "04-06 Septembre 2025",
+              "location": "CIS Château-Gontier"
+            }
+          ]
+        }
+      ],
+      "contact": "Pôle Formation SAP - sap@sdis53.fr (Tél: 02 43 XX XX XX)"
+    },
+    "SAP-02": {
+      "id": "SAP-02",
+      "title": "Équipier Secours à Personnes (PSE 2)",
+      "category": "Secours à Personnes",
+      "subCategory": "Opérationnel",
+      "summary": "Perfectionnement aux techniques d'équipier secouriste, relevage, immobilisation et prise en charge de victimes multiples.",
+      "duration": "4 jours (28h)",
+      "prerequisites": "• Détenir le PSE 1 en cours de validité",
+      "observations": "Prévoir une tenue de sport adaptée et des vêtements de travail résistants.",
+      "phases": [
+        {
+          "phaseTitle": "Phase Unique : Perfectionnement et Équipier",
+          "sessions": [
+            {
+              "sessionName": "Session 1",
+              "dates": "20-23 Février 2025",
+              "location": "CIS Laval"
+            },
+            {
+              "sessionName": "Session 2",
+              "dates": "15-18 Juin 2025",
+              "location": "CIS Craon"
+            }
+          ]
+        }
+      ],
+      "contact": "Pôle Formation SAP - sap@sdis53.fr"
+    },
+    "INC-01": {
+      "id": "INC-01",
+      "title": "Chef d'Équipe Incendie (FEU)",
+      "category": "Incendie",
+      "subCategory": "Commandement",
+      "summary": "Conduite d'un binôme ou d'un équipage d'intervention sur feux de structures, reconnaissance et gestion des risques thermiques.",
+      "duration": "5 jours (35h)",
+      "prerequisites": "• Être Sapeur-Pompier 1ère classe (SP1) validé\n• Formation initiale incendie validée",
+      "observations": "Test d'entrée éliminatoire (APT / Parcours sportif). Port de la tenue de feu obligatoire.",
+      "phases": [
+        {
+          "phaseTitle": "Phase 1 : Fondamentaux et Sécurité",
+          "sessions": [
+            {
+              "sessionName": "Session 1",
+              "dates": "12-14 Février 2025",
+              "location": "Centre de Formation d'Ernée"
+            },
+            {
+              "sessionName": "Session 2",
+              "dates": "19-21 Février 2025",
+              "location": "Centre de Formation d'Ernée"
+            }
+          ]
+        },
+        {
+          "phaseTitle": "Phase 2 : Manœuvres Feu Réel",
+          "sessions": [
+            {
+              "sessionName": "Session 1",
+              "dates": "12-16 Mars 2025",
+              "location": "Plateau Technique Départemental (Changé)"
+            },
+            {
+              "sessionName": "Session 2",
+              "dates": "20-24 Septembre 2025",
+              "location": "Plateau Technique Départemental (Changé)"
+            }
+          ]
+        }
+      ],
+      "contact": "Commandant Leclerc - c.incendie@sdis53.fr"
+    },
+    "INC-02": {
+      "id": "INC-02",
+      "title": "Feux de Forêt - Niveau 1 (FDF 1)",
+      "category": "Incendie",
+      "subCategory": "Feux de Forêt",
+      "summary": "Tactique de lutte contre les feux d'espaces naturels, maniement des lances d'emport et sécurité des groupes d'intervention (GIFF).",
+      "duration": "4 jours (28h)",
+      "prerequisites": "• Formation initiale incendie (INC) validée",
+      "observations": "Stage terrain en conditions réelles (manœuvres feu réel en zone boisée).",
+      "phases": [
+        {
+          "phaseTitle": "Phase Unique : Tactique Feux de Forêt",
+          "sessions": [
+            {
+              "sessionName": "Session 1",
+              "dates": "14-17 Mai 2025",
+              "location": "Forêt de Mayenne"
+            },
+            {
+              "sessionName": "Session 2",
+              "dates": "08-11 Octobre 2025",
+              "location": "Forêt de Pail"
+            }
+          ]
+        }
+      ],
+      "contact": "Cellule Feux de Forêt - fdf@sdis53.fr"
+    },
+    "SR-01": {
+      "id": "SR-01",
+      "title": "Secours Routier et Désincarcération (SR 1)",
+      "category": "Secours Routier",
+      "subCategory": "Opérationnel",
+      "summary": "Mise en œuvre des matériels hydrauliques de désincarcération et techniques de coupe/écartement sur véhicules légers.",
+      "duration": "3 jours (21h)",
+      "prerequisites": "• Formation équipement de base validée",
+      "observations": "Port de gants de travail renforcés et chaussures de sécurité requis.",
+      "phases": [
+        {
+          "phaseTitle": "Phase Unique : Technique Désincarcération",
+          "sessions": [
+            {
+              "sessionName": "Session 1",
+              "dates": "05-07 Avril 2025",
+              "location": "CIS Laval"
+            },
+            {
+              "sessionName": "Session 2",
+              "dates": "12-14 Novembre 2025",
+              "location": "CIS Evron"
+            }
+          ]
+        }
+      ],
+      "contact": "Pôle Secours Routier - sr@sdis53.fr"
+    },
+    "CAD-01": {
+      "id": "CAD-01",
+      "title": "Chef de Groupe (CHG)",
+      "category": "Management & Cadre",
+      "subCategory": "Encadrement",
+      "summary": "Commandement d'une intervention impliquant plusieurs engins (groupe), gestion de poste de commandement tactique (PCT).",
+      "duration": "10 jours (70h)",
+      "prerequisites": "• Adjudant ou Sapeur-Pompier qualifié Chef d'équipe\n• Réussite aux épreuves d'admissibilité",
+      "observations": "Travaux de synthèse et mises en situation opérationnelle (MPSO) sur deux semaines.",
+      "phases": [
+        {
+          "phaseTitle": "Phase 1 : Théorie et Commandement Tactique",
+          "sessions": [
+            {
+              "sessionName": "Session 1",
+              "dates": "01-05 Juin 2025",
+              "location": "École Départementale SDIS 53"
+            }
+          ]
+        },
+        {
+          "phaseTitle": "Phase 2 : Mises en Situation (MPSO)",
+          "sessions": [
+            {
+              "sessionName": "Session 1",
+              "dates": "08-12 Juin 2025",
+              "location": "Plateau Technique Départemental (Changé)"
+            }
+          ]
+        }
+      ],
+      "contact": "École Départementale - ecole.commandement@sdis53.fr"
+    },
+    "CTA-01": {
+      "id": "CTA-01",
+      "title": "Opérateur de Traitement de l'Alerte (CTA / CODIS)",
+      "category": "CTA / CODIS",
+      "subCategory": "Opérationnel",
+      "summary": "Réception des appels d'urgence (18/112), qualification des requêtes, conseils aux victimes et engagement des moyens.",
+      "duration": "5 jours (35h)",
+      "prerequisites": "• Aptitude avérée à la communication radio\n• Maîtrise des outils informatiques opérationnels",
+      "observations": "Période de tutorat et doublage au CTA/CODIS obligatoire après la formation théorique.",
+      "phases": [
+        {
+          "phaseTitle": "Phase Unique : Formation CTA / CODIS",
+          "sessions": [
+            {
+              "sessionName": "Session 1",
+              "dates": "18-22 Février 2025",
+              "location": "CODIS (Laval)"
+            },
+            {
+              "sessionName": "Session 2",
+              "dates": "15-19 Septembre 2025",
+              "location": "CODIS (Laval)"
+            }
+          ]
+        }
+      ],
+      "contact": "Chef de salle CODIS - codis@sdis53.fr"
+    },
+    "SPV-01": {
+      "id": "SPV-01",
+      "title": "Formation Initiale Sapeur-Pompier Volontaire (FI SPV)",
+      "category": "Initial",
+      "subCategory": "Recrutement",
+      "summary": "Parcours d'intégration complet pour les nouveaux engagés volontaires (tronc commun, incendie, SAP, opérations diverses).",
+      "duration": "15 jours (répartis sur 6 week-ends)",
+      "prerequisites": "• Engagement validé par le médecin chef du SDIS\n• Arrêté d'engagement",
+      "observations": "Remise du livret d'apprentissage individuel au premier jour.",
+      "phases": [
+        {
+          "phaseTitle": "Phase 1 : Tronc Commun & Secours à Personnes",
+          "sessions": [
+            {
+              "sessionName": "Session 1 (Week-ends)",
+              "dates": "Mars - Avril 2025",
+              "location": "Centres de Secours Référents"
+            }
+          ]
+        },
+        {
+          "phaseTitle": "Phase 2 : Incendie & Opérations Diverses",
+          "sessions": [
+            {
+              "sessionName": "Session 1 (Week-ends)",
+              "dates": "Mai - Juin 2025",
+              "location": "Plateau Technique Départemental (Changé)"
+            }
+          ]
+        }
+      ],
+      "contact": "Groupement Volontariat - volontariat@sdis53.fr"
+    }
+  },
+  "announcements": {
+    "1": {
+      "id": "1",
+      "title": "Nouvelle session ajoutée",
+      "message": "Une session supplémentaire a été ouverte pour la formation Chef d'Équipe Incendie (INC-01) à Ernée.",
+      "type": "ADDED",
+      "date": "01 Mars 2025"
+    },
+    "2": {
+      "id": "2",
+      "title": "Session annulée",
+      "message": "La session du 15 Janvier de l'Équipier SAP (SAP-01) est reportée en raison des conditions météorologiques.",
+      "type": "CANCELLED",
+      "date": "28 Février 2025"
+    },
+    "3": {
+      "id": "3",
+      "title": "Modification des prérequis",
+      "message": "Mise à jour du règlement pour la formation Chef de Groupe (CHG). Voir détails sur la fiche.",
+      "type": "MODIFIED",
+      "date": "25 Février 2025"
+    }
+  }
+}
