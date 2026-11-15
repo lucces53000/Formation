@@ -9,6 +9,20 @@ body {
   background: #f5f7fa;
 }
 
+.catalog-page {
+  padding-bottom: 4.25rem;
+}
+
+.catalog-page .public-footer {
+  position: fixed;
+  z-index: 1020;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: #f5f7fa;
+  box-shadow: 0 -0.2rem 0.65rem rgb(24 59 104 / 8%);
+}
+
 html.maintenance-checking [data-public-content],
 html.maintenance-active [data-public-content],
 html.maintenance-unavailable [data-public-content] {

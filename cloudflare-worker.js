@@ -3,6 +3,22 @@ const MAX_MESSAGE_LENGTH = 3000;
 const MAX_NOTIFICATION_BYTES = 3500;
 const MAX_AGENT_FEEDS_PER_REQUEST = 50;
 const MAX_ICS_BYTES = 2_000_000;
+const REVIEW_CODE_PATTERN = /^[A-Za-z0-9_-]{32,128}$/;
+const REVIEW_COLLECTIONS = [
+  "trainings",
+  "trainingCategories",
+  "trainingLocations",
+  "trainingContacts",
+  "importantInformation",
+  "importantInformationCategories"
+];
+
+class WorkerHttpError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.status = status;
+  }
+}
 const AGENT_OCCUPATIONS = [
   { code: "DS COEPT F1", category: "caisson", colorType: "caisson" },
   { code: "FOR CAISSON", category: "caisson", colorType: "caisson" },
@@ -49,12 +65,15 @@ function privateKeyBytes(pem) {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
-async function createGoogleAccessToken(serviceAccount) {
+async function createGoogleAccessToken(
+  serviceAccount,
+  scope = "https://www.googleapis.com/auth/firebase.messaging"
+) {
   const now = Math.floor(Date.now() / 1000);
   const header = base64UrlEncode(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claims = base64UrlEncode(JSON.stringify({
     iss: serviceAccount.client_email,
-    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    scope,
     aud: "https://oauth2.googleapis.com/token",
     iat: now,
     exp: now + 3600
@@ -86,6 +105,385 @@ async function createGoogleAccessToken(serviceAccount) {
     throw new Error("Échec de l’authentification FCM côté serveur.");
   }
   return result.access_token;
+}
+
+function encodeFirestoreValue(value) {
+  if (value === null) return { nullValue: null };
+  if (typeof value === "boolean") return { booleanValue: value };
+  if (typeof value === "string") return { stringValue: value };
+  if (typeof value === "number") {
+    return Number.isInteger(value)
+      ? { integerValue: String(value) }
+      : { doubleValue: value };
+  }
+  if (value instanceof Date) return { timestampValue: value.toISOString() };
+  if (Array.isArray(value)) return { arrayValue: { values: value.map(encodeFirestoreValue) } };
+  if (value && typeof value === "object") {
+    return {
+      mapValue: {
+        fields: Object.fromEntries(
+          Object.entries(value).map(([key, item]) => [key, encodeFirestoreValue(item)])
+        )
+      }
+    };
+  }
+  throw new Error("Unsupported Firestore field value.");
+}
+
+function decodeFirestoreValue(value) {
+  if ("nullValue" in value) return null;
+  if ("booleanValue" in value) return value.booleanValue;
+  if ("stringValue" in value) return value.stringValue;
+  if ("integerValue" in value) return Number(value.integerValue);
+  if ("doubleValue" in value) return value.doubleValue;
+  if ("timestampValue" in value) return new Date(value.timestampValue);
+  if ("arrayValue" in value) {
+    return (value.arrayValue.values || []).map(decodeFirestoreValue);
+  }
+  if ("mapValue" in value) return decodeFirestoreFields(value.mapValue.fields || {});
+  return null;
+}
+
+function decodeFirestoreFields(fields = {}) {
+  return Object.fromEntries(
+    Object.entries(fields).map(([key, value]) => [key, decodeFirestoreValue(value)])
+  );
+}
+
+function firestoreDocumentUrl(projectId, documentPath) {
+  return `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/${documentPath}`;
+}
+
+async function firestoreRequest(projectId, documentPath, accessToken, options = {}) {
+  const response = await fetch(firestoreDocumentUrl(projectId, documentPath), {
+    method: options.method || "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    ...(options.body ? { body: JSON.stringify(options.body) } : {})
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    console.error("Review Firestore request failed:", response.status);
+    throw new WorkerHttpError("Le service de relecture ne peut pas accéder aux données Firestore.", 503);
+  }
+  return response.status === 204 ? {} : response.json();
+}
+
+async function readFirestoreCollection(projectId, collectionPath, accessToken) {
+  const documents = [];
+  let pageToken = "";
+  do {
+    const query = new URLSearchParams({ pageSize: "1000" });
+    if (pageToken) query.set("pageToken", pageToken);
+    const response = await fetch(
+      `${firestoreDocumentUrl(projectId, collectionPath)}?${query}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!response.ok) {
+      console.error("Review Firestore collection read failed:", response.status);
+      throw new WorkerHttpError("Le service de relecture ne peut pas charger la copie.", 503);
+    }
+    const result = await response.json();
+    documents.push(...(result.documents || []).map((document) => ({
+      id: document.name.split("/").pop(),
+      data: decodeFirestoreFields(document.fields)
+    })));
+    if (documents.length > 5000) throw new Error("La copie dépasse la taille maximale de relecture.");
+    pageToken = result.nextPageToken || "";
+  } while (pageToken);
+  return documents;
+}
+
+async function readReviewComments(projectId, versionId, accessToken) {
+  const queryResponse = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents:runQuery`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: "catalogReviewLinks" }],
+          where: {
+            fieldFilter: {
+              field: { fieldPath: "versionId" },
+              op: "EQUAL",
+              value: { stringValue: versionId }
+            }
+          }
+        }
+      })
+    }
+  );
+  if (!queryResponse.ok) {
+    console.error("Review link query failed:", queryResponse.status);
+    throw new WorkerHttpError("Le service de relecture ne peut pas charger les commentaires.", 503);
+  }
+  const queryResults = await queryResponse.json();
+  const reviewLinks = queryResults
+    .map((result) => result.document)
+    .filter(Boolean)
+    .map((document) => ({
+      id: document.name.split("/").pop(),
+      ...decodeFirestoreFields(document.fields)
+    }));
+  const commentsByLink = await Promise.all(reviewLinks.map(async (link) => {
+    const comments = await readFirestoreCollection(
+      projectId,
+      `catalogReviewLinks/${encodeURIComponent(link.id)}/comments`,
+      accessToken
+    );
+    const storedComments = comments.map((comment) => ({
+      ...comment.data,
+      id: comment.id,
+      reviewerName: comment.data.reviewerName || link.reviewerName || "Relecteur",
+      reviewLinkId: link.id
+    }));
+    if (storedComments.length === 0 && link.lastReviewComment) {
+      storedComments.push({
+        id: "legacy-last-review-comment",
+        type: "general",
+        comment: link.lastReviewComment,
+        reviewerName: link.reviewerName || "Relecteur",
+        createdAt: link.updatedAt || link.submittedAt || null,
+        replies: link.lastReviewReplies || [],
+        reviewLinkId: link.id,
+        legacyReviewComment: true
+      });
+    }
+    return storedComments;
+  }));
+  const historicalComments = await readFirestoreCollection(
+    projectId,
+    `catalogVersions/${encodeURIComponent(versionId)}/comments`,
+    accessToken
+  );
+  const comments = [
+    ...commentsByLink.flat(),
+    ...historicalComments.map((comment) => ({
+      ...comment.data,
+      id: comment.id,
+      reviewerName: comment.data.reviewerName || "Relecteur (lien historique)",
+      sourceVersionComments: true
+    }))
+  ].sort((left, right) =>
+    (left.createdAt instanceof Date ? left.createdAt.getTime() : 0) -
+    (right.createdAt instanceof Date ? right.createdAt.getTime() : 0)
+  );
+  const reviewers = reviewLinks
+    .filter((link) => !["creating", "deleting"].includes(link.status))
+    .map((link) => ({
+      reviewerName: link.reviewerName || "Relecteur",
+      status: link.status,
+      validated: comments.some((comment) =>
+        comment.reviewLinkId === link.id && comment.type === "validation"
+      )
+    }));
+  return { comments, reviewers };
+}
+
+async function loadReviewForWorker(code, env, collectionNames = REVIEW_COLLECTIONS) {
+  if (typeof code !== "string" || !REVIEW_CODE_PATTERN.test(code)) {
+    throw new WorkerHttpError("Ce lien de relecture est invalide ou a été révoqué.", 404);
+  }
+  const serviceAccount = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT || "{}");
+  if (!serviceAccount.client_email || !serviceAccount.private_key || !env.FIREBASE_PROJECT_ID) {
+    throw new WorkerHttpError("Le service de relecture n’est pas configuré.", 503);
+  }
+  const accessToken = await createGoogleAccessToken(
+    serviceAccount,
+    "https://www.googleapis.com/auth/datastore"
+  );
+  const projectId = env.FIREBASE_PROJECT_ID;
+  const codeDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code));
+  const hashedCode = [...new Uint8Array(codeDigest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  let linkPath = `catalogReviewLinks/${hashedCode}`;
+  let linkDocument = await firestoreRequest(projectId, linkPath, accessToken);
+  if (!linkDocument) {
+    linkPath = `catalogReviewLinks/${code}`;
+    linkDocument = await firestoreRequest(projectId, linkPath, accessToken);
+  }
+  if (!linkDocument) throw new WorkerHttpError("Ce lien de relecture est invalide ou a été révoqué.", 404);
+  const link = decodeFirestoreFields(linkDocument.fields);
+  const versionPath = `catalogVersions/${encodeURIComponent(link.versionId || "")}`;
+  const versionDocument = await firestoreRequest(projectId, versionPath, accessToken);
+  const version = versionDocument ? decodeFirestoreFields(versionDocument.fields) : null;
+  if (
+    link.status !== "in_review"
+    || !(link.expiresAt instanceof Date)
+    || link.expiresAt.getTime() <= Date.now()
+    || version?.status !== "in_review"
+  ) {
+    throw new WorkerHttpError("Ce lien de relecture est expiré, révoqué ou n’est plus actif.", 410);
+  }
+
+  const records = {};
+  await Promise.all(collectionNames.map(async (name) => {
+    records[name] = await readFirestoreCollection(
+      projectId,
+      `${linkPath}/records/${name}/items`,
+      accessToken
+    );
+  }));
+  return {
+    projectId,
+    accessToken,
+    linkPath,
+    link,
+    version,
+    records
+  };
+}
+
+async function handleCatalogReviewRequest(body, env) {
+  const collectionNames = body.kind === "review_load"
+    ? REVIEW_COLLECTIONS
+    : body.kind === "review_comment"
+      ? ["trainings"]
+      : [];
+  const review = await loadReviewForWorker(body.code, env, collectionNames);
+  if (body.kind === "review_validate") {
+    const existingComments = await readFirestoreCollection(
+      review.projectId,
+      `${review.linkPath}/comments`,
+      review.accessToken
+    );
+    if (existingComments.some((item) => item.data.type === "validation")) {
+      const discussion = await readReviewComments(
+        review.projectId,
+        review.link.versionId,
+        review.accessToken
+      );
+      return {
+        submitted: true,
+        alreadyValidated: true,
+        reviewers: discussion.reviewers,
+        currentReviewerValidated: true
+      };
+    }
+    const validation = {
+      type: "validation",
+      comment: "Version validée en l’état.",
+      reviewerName: review.link.reviewerName || "Relecteur",
+      createdAt: new Date()
+    };
+    const commentId = crypto.randomUUID();
+    const query = new URLSearchParams({ documentId: commentId });
+    const result = await firestoreRequest(
+      review.projectId,
+      `${review.linkPath}/comments?${query}`,
+      review.accessToken,
+      {
+        method: "POST",
+        body: { fields: Object.fromEntries(
+          Object.entries(validation).map(([key, value]) => [key, encodeFirestoreValue(value)])
+        ) }
+      }
+    );
+    if (!result) throw new WorkerHttpError("La validation n’a pas pu être enregistrée.", 503);
+    const discussion = await readReviewComments(
+      review.projectId,
+      review.link.versionId,
+      review.accessToken
+    );
+    return {
+      submitted: true,
+      validation: { ...validation, id: commentId },
+      reviewers: discussion.reviewers,
+      currentReviewerValidated: true
+    };
+  }
+
+  if (body.kind === "review_load") {
+    const discussion = await readReviewComments(
+      review.projectId,
+      review.link.versionId,
+      review.accessToken
+    );
+    return {
+      version: {
+        id: review.link.versionId,
+        title: review.link.title,
+        year: review.link.year,
+        reviewerName: review.link.reviewerName || "Relecteur",
+        status: review.link.status
+      },
+      records: review.records,
+      comments: discussion.comments,
+      reviewers: discussion.reviewers,
+      currentReviewerValidated: discussion.comments.some((comment) =>
+        comment.reviewLinkId === review.linkPath.split("/").pop() && comment.type === "validation"
+      )
+    };
+  }
+
+  if (body.kind === "review_comments") {
+    const discussion = await readReviewComments(
+      review.projectId,
+      review.link.versionId,
+      review.accessToken
+    );
+    return {
+      comments: discussion.comments,
+      reviewers: discussion.reviewers,
+      currentReviewerValidated: discussion.comments.some((comment) =>
+        comment.reviewLinkId === review.linkPath.split("/").pop() && comment.type === "validation"
+      )
+    };
+  }
+
+  if (body.kind !== "review_comment") {
+    throw new Error("Action de relecture non prise en charge.");
+  }
+  if (!["general", "training"].includes(body.type)) {
+    throw new WorkerHttpError("Le type de commentaire est invalide.", 400);
+  }
+  const comment = typeof body.comment === "string" ? body.comment.trim() : "";
+  if (!comment || comment.length > 2000) {
+    throw new WorkerHttpError("Le commentaire est obligatoire et limité à 2 000 caractères.", 400);
+  }
+  const commentData = {
+    type: body.type,
+    comment,
+    reviewerName: review.link.reviewerName || "Relecteur",
+    createdAt: new Date()
+  };
+  if (body.type === "training") {
+    const trainingId = typeof body.trainingId === "string" ? body.trainingId : "";
+    if (!review.records.trainings.some((training) => training.id === trainingId)) {
+      throw new WorkerHttpError("La formation concernée ne fait pas partie de cette copie.", 400);
+    }
+    commentData.trainingId = trainingId;
+  }
+  const commentId = crypto.randomUUID();
+  const parentPath = `${review.linkPath}/comments`;
+  const query = new URLSearchParams({ documentId: commentId });
+  const result = await firestoreRequest(
+    review.projectId,
+    `${parentPath}?${query}`,
+    review.accessToken,
+    {
+      method: "POST",
+      body: { fields: Object.fromEntries(
+        Object.entries(commentData).map(([key, value]) => [key, encodeFirestoreValue(value)])
+      ) }
+    }
+  );
+  if (!result) throw new WorkerHttpError("Le commentaire n’a pas pu être enregistré.", 503);
+  return {
+    submitted: true,
+    comment: {
+      ...commentData,
+      id: commentId,
+      reviewLinkId: review.linkPath.split("/").pop()
+    }
+  };
 }
 
 function isAuthorizedAdministrator(user, env) {
@@ -449,14 +847,28 @@ export default {
       return jsonResponse({ error: "Le contenu doit être au format JSON." }, 415, origin, allowedOrigins);
     }
 
-    const authorization = request.headers.get("Authorization") || "";
-    const idToken = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
-    if (!idToken || idToken.length > 5000) {
-      return jsonResponse({ error: "Authentification Firebase requise." }, 401, origin, allowedOrigins);
-    }
-
     try {
       const body = await request.json();
+      if (["review_load", "review_comments", "review_comment", "review_validate"].includes(body.kind)) {
+        try {
+          const result = await handleCatalogReviewRequest(body, env);
+          return jsonResponse(result, 200, origin, allowedOrigins);
+        } catch (error) {
+          const status = error instanceof WorkerHttpError ? error.status : 500;
+          const message = error instanceof WorkerHttpError
+            ? error.message
+            : "Le service de relecture a rencontré une erreur. Réessayez plus tard.";
+          if (status === 500) console.error("Catalog review request failed.");
+          return jsonResponse({ error: message }, status, origin, allowedOrigins);
+        }
+      }
+
+      const authorization = request.headers.get("Authorization") || "";
+      const idToken = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+      if (!idToken || idToken.length > 5000) {
+        return jsonResponse({ error: "Authentification Firebase requise." }, 401, origin, allowedOrigins);
+      }
+
       const requiredEmail = body.kind === "agent_occupations" ? "luc.cesbron@sdis53.fr" : "";
       if (!await verifyAdministrator(idToken, env, requiredEmail)) {
         return jsonResponse({ error: "Compte administrateur vérifié requis." }, 403, origin, allowedOrigins);

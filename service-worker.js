@@ -1,4 +1,4 @@
-const CACHE_NAME = "formation-admin-pwa-v42";
+const CACHE_NAME = "formation-admin-pwa-v47";
 const APP_SHELL = [
   "./admin.html",
   "./admin-versions.html",

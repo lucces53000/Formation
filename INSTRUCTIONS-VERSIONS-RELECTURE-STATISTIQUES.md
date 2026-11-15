@@ -4,7 +4,7 @@ Ce document est une demande à lancer ultérieurement. **Ne pas commencer les mo
 
 ## Résultat attendu
 
-Ajouter à l’application existante un mécanisme facultatif permettant aux administrateurs de créer, quand ils le décident, une copie complète du catalogue à faire relire au moyen d’un lien sécurisé, sans créer de compte relecteur. Une version approuvée pourra être publiée explicitement. Après publication, l’ancienne version ne sera plus publique mais restera archivée.
+Ajouter à l’application existante un mécanisme facultatif permettant aux administrateurs de créer, quand ils le décident, une copie complète du catalogue à faire relire au moyen de liens individuels sécurisés, sans créer de compte relecteur. Les relecteurs peuvent envoyer des commentaires généraux et par formation ; ils ne peuvent pas bloquer la publication, qui relève de l’administrateur. Après publication, l’ancienne version ne sera plus publique mais restera archivée.
 
 Cette relecture concerne les versions annuelles du catalogue, pas les mises à jour de routine : pendant l’année, les administrateurs doivent continuer à ajouter ou modifier des formations et des sessions comme aujourd’hui, sans lancer une nouvelle relecture complète.
 
@@ -19,7 +19,7 @@ Le projet est une application web statique utilisant Firebase Authentication et 
 - `admin.html` et `app.js` gèrent les formations, les dates à retenir, les paramètres, les annonces, le calendrier des lieux et les statistiques.
 - Les données existantes comprennent notamment `trainings`, `trainingCategories`, `trainingLocations`, `trainingContacts`, `importantInformation`, `importantInformationCategories` et d’autres collections déjà utilisées. Inspecter le code pour établir le périmètre exact des données nécessaires à une copie fidèle.
 - Les règles actuelles de `firestore.rules` autorisent les comptes administrateurs `luc.cesbron@sdis53.fr` et `formation@sdis53.fr` à gérer les collections de catalogue. **Ces deux comptes conservent leurs droits actuels.** Ne pas élargir ni restreindre leurs droits existants sans nécessité démontrée et expliquée.
-- Il n’y aura pas de compte relecteur. L’accès à la page dédiée se fera au moyen d’un lien avec code généré par l’application et transmis aux relecteurs par les administrateurs hors application. Ne pas envoyer de courriels automatiquement.
+- Il n’y aura pas de compte relecteur. L’accès à la page dédiée se fera au moyen d’un lien avec code généré par l’application, individuel pour chaque relecteur, associé à un nom et transmis hors application. Ne pas envoyer de courriels automatiquement. Le nom attribue les commentaires mais n’est pas une identité vérifiée.
 - Les statistiques actuelles de l’administration comprennent les formations, sessions, jours cumulés par domaine et jours d’utilisation par lieu. Les règles de calcul et la distinction des domaines décrites dans `README.md` sont à préserver, après vérification du code réel.
 - Ne pas confondre cette fonctionnalité avec `agent-calendar.html` et ses données/règles propres.
 
@@ -73,20 +73,22 @@ Le dossier de livraison doit inclure une procédure courte et exécutable de ret
 ## 3. Lien sécurisé et page de relecture
 
 - Créer une page dédiée, distincte de `admin.html`, destinée uniquement à la consultation et aux actions de relecture.
-- Générer un code à forte entropie, imprévisible et propre à une seule version. Le lien doit pouvoir être partagé manuellement par courriel.
+- Générer un code à forte entropie, imprévisible et propre à un relecteur d’une version. Le lien doit pouvoir être partagé manuellement par courriel.
 - Le code est un secret porteur : quiconque le détient peut accéder à la relecture. Le dire clairement aux administrateurs et aux relecteurs; ne pas prétendre qu’il identifie la personne qui l’utilise.
 - Le code ne doit donner aucun accès à l’administration, à d’autres versions, aux collections publiques non nécessaires ou aux données du calendrier des agents.
 - Ne pas sécuriser la page en se contentant de masquer des éléments, de vérifier le code uniquement dans le JavaScript client, ou d’accorder la lecture publique aux documents de relecture.
 - Faire vérifier le code et l’état actif de la version dans une couche serveur de confiance, compatible avec les services Firebase effectivement disponibles. La consultation et les actions doivent passer par cette couche. Les règles Firestore doivent continuer à bloquer l’accès direct non autorisé.
 - Ne jamais stocker le code en clair dans Firestore, les journaux ou les rapports d’erreur. Évaluer les risques d’exposition du code dans l’URL, l’historique du navigateur, les journaux HTTP et les référents; appliquer des mesures adaptées, par exemple échange du code contre une session limitée, limitation de débit et absence de transmission à des tiers.
 - Permettre de révoquer un lien. Le contrôle de révocation doit être appliqué côté serveur; après publication ou annulation, le lien devient inutilisable.
-- Permettre au relecteur de consulter la copie et de transmettre un commentaire ou de demander des corrections. L’approbation doit être une action explicite sur cette page, si elle est retenue comme étape du circuit. Si plusieurs relecteurs utilisent le même lien, expliquer que le lien ne permet pas de distinguer leur identité.
+- Permettre à l’administrateur d’ajouter et de révoquer des relecteurs individuellement sans supprimer leurs commentaires déjà transmis.
+- Permettre au relecteur de consulter la copie organisée par catégorie et sous-catégorie, puis d’envoyer plusieurs commentaires attribués à son nom : un commentaire général et des commentaires facultatifs associés chacun à une formation.
+- Afficher ces commentaires dans l’administration sur la version et en les rattachant aux formations concernées. Les commentaires et l’absence de réponse d’un relecteur ne doivent jamais bloquer la publication décidée par l’administrateur.
 - Afficher les états et confirmer les actions. Présenter une erreur explicite si le lien est invalide, révoqué, expiré ou lié à une version déjà publiée.
 
 ## 4. Publication, archive et modifications courantes
 
 - Tant que la nouvelle version est créée, éditée ou relue, `index.html` et `calendrier.html` continuent d’afficher les données actives actuelles, inchangées.
-- Après validation du relecteur, la publication nécessite une action explicite d’un administrateur existant.
+- La publication nécessite une action explicite d’un administrateur existant ; aucun avis individuel ne constitue un veto.
 - Basculer le catalogue et le calendrier de manière cohérente. Éviter qu’un lecteur voie un mélange de versions ou une mise à jour partielle entre collections. Choisir et documenter une stratégie atomique ou une stratégie avec pointeur de version publiée; traiter les limites/quotas Firestore.
 - Après réussite de la publication, la nouvelle version est la version publique, l’ancienne n’est plus affichée et est conservée en archive, pas supprimée définitivement. Prévoir un retour arrière vérifié vers une archive.
 - Désactiver le lien de la version publiée et refuser son utilisation ultérieure côté serveur.
@@ -122,7 +124,7 @@ Conserver une voie de retour vers le fonctionnement antérieur jusqu’à ce que
 - Créer ou modifier une copie ne change ni le catalogue de `index.html`, ni le calendrier public, ni les PDF actuels.
 - Le lien ne permet d’accéder qu’à la version visée, ne donne aucun accès à l’administration et cesse de fonctionner après révocation/publication.
 - Les règles Firestore et la couche serveur refusent les accès non autorisés; la sécurité n’est pas uniquement assurée par l’interface.
-- Les soumissions, demandes de corrections, approbations, invalidations après modification et publications respectent le workflow.
+- Les soumissions, commentaires individuels, révocations, modifications après la collecte, et publications administrateur respectent le workflow.
 - L’ancienne version est archivée, masquée du public et récupérable; elle n’est pas supprimée définitivement.
 - Une erreur durant la publication laisse un catalogue public cohérent, et le retour arrière est opérationnel.
 - Le retour arrière du code, des règles et des données a été répété avec succès en environnement isolé; sa procédure et ses limites sont livrées.

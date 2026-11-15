@@ -16,6 +16,21 @@ body {
   min-width: 320px;
 }
 
+.admin-sticky-shell {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid #dce2eb;
+  background: #f3f5f9;
+  box-shadow: 0 0.25rem 0.75rem rgb(24 59 104 / 8%);
+}
+
+.admin-sticky-content {
+  width: min(1100px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding-bottom: 0.25rem;
+}
+
 .site-header {
   display: flex;
   justify-content: center;
@@ -261,7 +276,7 @@ textarea {
 .tabs {
   display: flex;
   gap: 0.5rem;
-  margin: 1.5rem 0;
+  margin: 0 0 0.5rem;
   border-bottom: 1px solid #dce2eb;
 }
 
@@ -763,7 +778,78 @@ textarea {
 }
 
 .training-category-records {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 0.85rem;
   padding: 0.85rem;
+}
+
+.training-admin-card {
+  align-items: stretch;
+  flex-direction: column;
+  min-width: 0;
+  border-top: 5px solid var(--training-accent, #205b98);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  transition: box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.training-admin-card:hover {
+  border-color: #9fb6d0;
+  border-top-color: var(--training-accent, #205b98);
+  box-shadow: 0 0.5rem 1.25rem rgb(24 59 104 / 12%);
+}
+
+.training-admin-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.training-admin-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid #d9e3ef;
+  border-radius: 999px;
+  padding: 0.35em 0.65em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.training-admin-subcategory {
+  border-color: color-mix(in srgb, var(--subcategory-color, #205b98) 28%, white);
+  color: color-mix(in srgb, var(--subcategory-color, #205b98) 76%, #183b68);
+  background: color-mix(in srgb, var(--subcategory-color, #205b98) 12%, white);
+}
+
+.training-admin-duration {
+  color: #244b75;
+  background: #edf3fa;
+}
+
+.training-admin-sessions {
+  border-color: #cfe2ff;
+  color: #084298;
+  background: #e7f1ff;
+}
+
+.training-admin-title {
+  margin: 0.85rem 0 0;
+  color: #183b68;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.training-admin-card .record-actions {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  margin: 0.85rem 0 0;
 }
 
 .category-list {

@@ -123,6 +123,33 @@ Les secrets sont accessibles au Worker sans être intégrés à son code source.
 Ne pas placer la clé privée dans "wrangler.toml", dans un fichier versionné ou
 dans le JavaScript du site.
 
+
+3.1. AUTORISER LES COMMENTAIRES DE RELECTURE
+--------------------------------------------
+
+Le Worker existant peut également servir les liens de relecture sans Cloud
+Functions Firebase et sans passer au forfait Blaze. Pour autoriser cet usage :
+
+1. Dans Google Cloud > IAM, sélectionnez le même compte de service que celui
+   de FIREBASE_SERVICE_ACCOUNT.
+2. Créez de préférence un rôle IAM personnalisé limité aux permissions
+   datastore.entities.get, datastore.entities.list et datastore.entities.create,
+   puis accordez-le sur le projet seec-2da03. Le Worker a besoin de lire les
+   copies de relecture et de créer les commentaires, mais pas de modifier ou
+   supprimer les données du catalogue. Si la console ou Firestore signale une
+   permission manquante, ajoutez uniquement la permission signalée. Le rôle
+   prédéfini "Cloud Datastore User" (roles/datastore.user) est une alternative
+   plus large et ne doit être utilisé qu'en connaissance de cause.
+3. Après la propagation du rôle, remplacer le code du Worker par la version
+   actuelle de cloudflare-worker.js et redéployer le Worker.
+4. Conserver FIREBASE_PROJECT_ID=seec-2da03 et vérifier que
+   https://seec-2da03.web.app et https://seec-2da03.firebaseapp.com sont dans
+   ALLOWED_ORIGINS. Ne pas ajouter de secret de code de relecture à Cloudflare.
+
+Ce fonctionnement utilise le Worker Cloudflare existant et l'API REST
+Firestore ; il ne nécessite pas d'activer le forfait Blaze. Les opérations
+Firestore restent soumises aux quotas du forfait Spark et de Cloudflare.
+
 Documentation Cloudflare sur les secrets :
 https://developers.cloudflare.com/workers/configuration/secrets/
 

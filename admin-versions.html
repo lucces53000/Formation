@@ -62,6 +62,11 @@
               <label for="version-title">Nom de la version</label>
               <input id="version-title" name="title" type="text" maxlength="100" required>
             </div>
+            <div class="field">
+              <label for="initial-reviewer-name">Nom du premier relecteur</label>
+              <input id="initial-reviewer-name" name="reviewerName" type="text" maxlength="100" required>
+              <small>Ce nom attribue les commentaires mais n’est pas vérifié.</small>
+            </div>
             <button id="create-version-button" class="button primary" type="submit">Créer une copie de relecture</button>
           </form>
           <section id="review-link-result" class="review-link-result" role="status" aria-live="polite" hidden></section>
@@ -71,10 +76,16 @@
             <div class="section-heading">
               <div>
                 <h2 id="versions-list-title">Versions de relecture</h2>
-                <p>Ouvrez une copie en brouillon ou traitez la décision des relecteurs.</p>
+                <p>Gérez les relecteurs, consultez leurs commentaires et décidez vous-même de la publication.</p>
+                <p id="live-update-status" class="live-update-status" role="status" aria-live="polite">Mises à jour en direct en attente…</p>
               </div>
               <button id="refresh-versions" class="button secondary" type="button">Actualiser</button>
             </div>
+            <label class="version-search">
+              <span>Rechercher une version ou un relecteur</span>
+              <input id="version-filter" type="search" placeholder="Nom, année, statut ou relecteur">
+            </label>
+            <p id="version-results-summary" class="version-results-summary" aria-live="polite"></p>
             <div id="review-versions-list" class="catalog-version-list"></div>
           </section>
 

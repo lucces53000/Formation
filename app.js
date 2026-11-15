@@ -39,6 +39,7 @@ const isConfigured = requiredConfigKeys.every((key) => Boolean(firebaseConfig[ke
 const status = document.querySelector("#status");
 const loginPanel = document.querySelector("#login-panel");
 const adminPanel = document.querySelector("#admin-panel");
+const adminStickyControls = document.querySelector("#admin-sticky-controls");
 const signOutButton = document.querySelector("#sign-out");
 const agentCalendarLink = document.querySelector("#agent-calendar-link");
 const catalogLink = document.querySelector("#catalog-link");
@@ -1027,32 +1028,78 @@ function makeRecordCard(record, collectionName, sortable = false) {
     card.dataset.sortableId = record.id;
   }
   const title = record.title || record.id || "Sans titre";
-  const subCategory = String(record.subCategory || "").trim() || "Sans sous-catégorie";
-  const subtitle = collectionName === "trainings"
-    ? record.duration || ""
-    : `${localizedAnnouncementType(record.type) || "Annonce"} · ${record.date || ""}`;
-  const detail = collectionName === "trainings" ? record.summary : record.message;
+  if (collectionName === "trainings") {
+    const categoryName = String(record.category || "").trim() || "Sans catégorie";
+    const category = trainingCategories.get(categoryName);
+    const subCategoryName = String(record.subCategory || "").trim();
+    const subCategory = category?.subCategories.find((item) => item.name === subCategoryName);
+    const accentColor = safeColor(
+      subCategory?.color,
+      safeColor(category?.color, DEFAULT_CATEGORY_COLOR)
+    );
+    card.classList.add("training-admin-card");
+    card.style.setProperty("--training-accent", accentColor);
+
+    const badges = document.createElement("div");
+    badges.className = "training-admin-badges";
+    if (subCategoryName) {
+      const badge = document.createElement("span");
+      badge.className = "training-admin-badge training-admin-subcategory";
+      badge.textContent = subCategoryName;
+      badge.style.setProperty("--subcategory-color", accentColor);
+      badges.append(badge);
+    }
+    if (record.duration) {
+      const badge = document.createElement("span");
+      badge.className = "training-admin-badge training-admin-duration";
+      badge.textContent = record.duration;
+      badges.append(badge);
+    }
+    const sessionCount = Array.isArray(record.phases) && record.phases.length > 0
+      ? record.phases.length
+      : Array.isArray(record.sessions) ? record.sessions.length : 0;
+    if (sessionCount > 0) {
+      const badge = document.createElement("span");
+      badge.className = "training-admin-badge training-admin-sessions";
+      badge.textContent = `${sessionCount} session${sessionCount === 1 ? "" : "s"}`;
+      badges.append(badge);
+    }
+    const actions = document.createElement("div");
+    actions.className = "record-actions";
+    actions.classList.add("training-admin-actions");
+    if (sortable) {
+      actions.append(makeIconButton("drag", `Réordonner ${title}`, "secondary drag-handle", () => {}));
+    }
+    const isPublished = record.published !== false;
+    actions.append(
+      makeIconButton(
+        isPublished ? "eyeOff" : "eye",
+        `${isPublished ? "Masquer" : "Afficher"} ${title}`,
+        isPublished ? "secondary" : "primary",
+        () => requestTrainingVisibilityChange(record)
+      ),
+      makeIconButton("edit", `Modifier ${title}`, "secondary", () => openRecordDialog(collectionName, record)),
+      makeIconButton("delete", `Supprimer ${title}`, "danger", () => removeRecord(collectionName, record))
+    );
+
+    const heading = document.createElement("h3");
+    heading.className = "training-admin-title";
+    heading.textContent = title;
+    card.append(badges, heading, actions);
+    return card;
+  }
+
+  const subtitle = `${localizedAnnouncementType(record.type) || "Annonce"} · ${record.date || ""}`;
 
   card.innerHTML = `${sortable ? `<button class="button icon-action drag-handle" type="button" data-drag-handle aria-label="Réordonner ${escapeHtml(title)}" title="Glisser pour réordonner">${ACTION_ICONS.drag}</button>` : ""}
     <div class="record-copy">
-      ${collectionName === "trainings"
-        ? `<div class="record-title-row"><h3>${escapeHtml(title)}</h3><span class="training-subcategory-label">${escapeHtml(subCategory)}</span></div>`
-        : `<h3>${escapeHtml(title)}</h3>`}
+      <h3>${escapeHtml(title)}</h3>
       <p class="record-meta">${escapeHtml(subtitle)}</p>
-      <p>${escapeHtml(detail)}</p>
+      <p>${escapeHtml(record.message)}</p>
       <small>Document : ${escapeHtml(record.id)}</small>
     </div>
     <div class="record-actions"></div>`;
   const actions = card.querySelector(".record-actions");
-  if (collectionName === "trainings") {
-    const isPublished = record.published !== false;
-    actions.append(makeIconButton(
-      isPublished ? "eyeOff" : "eye",
-      `${isPublished ? "Masquer" : "Afficher"} ${title}`,
-      isPublished ? "secondary" : "primary",
-      () => requestTrainingVisibilityChange(record)
-    ));
-  }
   actions.append(
     makeIconButton("edit", `Modifier ${title}`, "secondary", () => openRecordDialog(collectionName, record)),
     makeIconButton("delete", `Supprimer ${title}`, "danger", () => removeRecord(collectionName, record))
@@ -3128,6 +3175,7 @@ if (!isConfigured) {
   onAuthStateChanged(auth, async (user) => {
     loginPanel.classList.toggle("hidden", Boolean(user));
     adminPanel.classList.toggle("hidden", !user);
+    adminStickyControls.classList.toggle("hidden", !user);
     signOutButton.classList.toggle("hidden", !user);
     agentCalendarLink.classList.toggle(
       "hidden",
