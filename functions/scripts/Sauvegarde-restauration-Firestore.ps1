@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 $scriptFile = Join-Path $PSScriptRoot "firestore-backup.js"
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
 $dependencyPath = Join-Path $projectRoot "functions\node_modules\firebase-admin"
-$defaultProjectId = "seec-2da03"
+$defaultProjectId = "id du projet"
 $credentialsSetByLauncher = $false
 
 function Wait-ForUser {
@@ -11,7 +11,7 @@ function Wait-ForUser {
 }
 
 function Confirm-ProjectId {
-  $projectId = Read-Host "Identifiant du projet Firebase [$defaultProjectId]"
+  $projectId = Read-Host "Identifiant du projet Firebase"
   if ([string]::IsNullOrWhiteSpace($projectId)) {
     $projectId = $defaultProjectId
   }
