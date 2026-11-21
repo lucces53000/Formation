@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demande de ressources</title>
+    <meta name="theme-color" content="#183b68">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./resources.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="admin-brand">
+        <img class="admin-logo" src="./logo.png" alt="">
+        <h1>Demande de ressources</h1>
+      </div>
+    </header>
+    <main class="resources-main">
+      <nav class="resources-navigation">
+        <a class="button secondary" href="./index.html">Retour au catalogue</a>
+        <button id="request-sign-out" class="button danger hidden" type="button">Se déconnecter</button>
+      </nav>
+      <section id="request-login-panel" class="panel login-panel">
+        <h2>Connexion demandeur</h2>
+        <form id="request-login-form" class="stack">
+          <label>Adresse e-mail<input name="email" type="email" autocomplete="username" required></label>
+          <label>Mot de passe<input name="password" type="password" autocomplete="current-password" required></label>
+          <button class="button primary" type="submit">Se connecter</button>
+        </form>
+      </section>
+      <section id="request-panel" class="hidden">
+        <nav class="tabs resources-tabs" aria-label="Demandes de ressources">
+          <button class="tab active" type="button" data-request-tab="new">Nouvelle demande</button>
+          <button class="tab" type="button" data-request-tab="current">Demandes en cours</button>
+        </nav>
+        <section class="panel resources-view" data-request-view="new">
+          <div class="section-heading resources-heading">
+            <div>
+              <h2>Choisir une formation</h2>
+              <p id="request-calendar-summary">Chargement…</p>
+            </div>
+          </div>
+          <div class="resources-month-controls">
+            <button id="request-month-previous" class="button secondary" type="button">‹</button>
+            <h3 id="request-month-label"></h3>
+            <button id="request-month-next" class="button secondary" type="button">›</button>
+            <button id="request-month-today" class="button secondary" type="button">Ce mois-ci</button>
+          </div>
+          <div id="request-month-grid" class="resources-month-grid"></div>
+        </section>
+        <section class="panel resources-view" data-request-view="new" style="margin-top:1rem">
+          <h2>Envoyer une demande</h2>
+          <form id="request-form" class="resources-form">
+            <label>Session<select name="sessionId" required></select></label>
+            <div class="resources-form-grid">
+              <label>Date de début<input name="startDate" type="date" required></label>
+              <label>Date de fin<input name="endDate" type="date" required></label>
+            </div>
+            <div class="resource-selection-block">
+              <h3>Ressources enregistrées</h3>
+              <div id="request-resource-cards" class="resource-selection-grid"></div>
+            </div>
+            <div class="resource-selection-block">
+              <div class="resources-heading">
+                <h3>Ressources ponctuelles</h3>
+                <button id="request-add-temporary" class="button secondary" type="button">Ajouter une ressource ponctuelle</button>
+              </div>
+              <div id="request-temporary-list" class="temporary-resource-list"></div>
+            </div>
+            <label>Notes<input name="notes" type="text" maxlength="1000"></label>
+            <p id="request-error" class="resources-error"></p>
+            <button class="button primary" type="submit">Envoyer la demande</button>
+          </form>
+        </section>
+        <section class="panel resources-view hidden" data-request-view="current">
+          <div class="section-heading resources-heading">
+            <div>
+              <h2>Demandes en cours</h2>
+              <p id="request-current-summary">Chargement…</p>
+            </div>
+          </div>
+          <div id="request-current-list" class="resource-list"></div>
+        </section>
+      </section>
+      <p id="request-status" class="status" role="status"></p>
+    </main>
+    <script type="module" src="./resource-request.js"></script>
+  </body>
+</html>

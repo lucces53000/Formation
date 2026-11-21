@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Calendrier public hebdomadaire des ressources affectées aux formations">
+    <title>Ressources des formations</title>
+    <meta name="theme-color" content="#183b68">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./resources.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="admin-brand">
+        <img class="admin-logo" src="./logo.png" alt="">
+        <h1>Ressources des formations</h1>
+      </div>
+    </header>
+
+    <main class="resources-main">
+      <nav class="resources-navigation" aria-label="Navigation">
+        <a class="button secondary" href="./calendrier.html">Calendrier des formations</a>
+        <a class="button secondary" href="./resource-request.html">Faire une demande de ressource</a>
+        <a class="button secondary" href="./index.html">Catalogue</a>
+      </nav>
+
+      <section class="panel resources-view">
+        <div class="section-heading resources-heading">
+          <div>
+            <h2>Calendrier hebdomadaire</h2>
+            <p id="public-resource-summary">Chargement des affectations…</p>
+          </div>
+          <div class="resources-month-controls">
+            <button id="public-resource-week-previous" class="button secondary" type="button" aria-label="Semaine précédente">‹</button>
+            <h3 id="public-resource-week-label"></h3>
+            <button id="public-resource-week-next" class="button secondary" type="button" aria-label="Semaine suivante">›</button>
+            <button id="public-resource-week-today" class="button secondary" type="button">Cette semaine</button>
+          </div>
+        </div>
+        <div id="public-resource-week-grid" class="resources-month-grid"></div>
+      </section>
+
+      <p id="public-resource-status" class="status" role="status" aria-live="polite"></p>
+    </main>
+
+    <script type="module" src="./resource-week.js"></script>
+  </body>
+</html>

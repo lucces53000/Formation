@@ -16,6 +16,85 @@ service cloud.firestore {
         && request.auth.token.email == "luc.cesbron@sdis53.fr";
     }
 
+    function isResourceManager() {
+      let email = request.auth != null ? request.auth.token.email.lower() : "";
+      let managerPath = /databases/$(database)/documents/resourceManagers/$(email);
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && (
+          email == "luc.cesbron@sdis53.fr"
+          || (exists(managerPath) && get(managerPath).data.active == true)
+        );
+    }
+
+    function isPrimaryResourceManager() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() == "luc.cesbron@sdis53.fr";
+    }
+
+    function isValidResource() {
+      return request.resource.data.keys().hasOnly([
+        "name", "type", "immatriculation", "cis", "active", "notes",
+        "createdBy", "createdAt", "updatedBy", "updatedAt"
+      ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.type in ["vehicule", "autre"]
+        && (!("immatriculation" in request.resource.data.keys()) || request.resource.data.immatriculation is string)
+        && request.resource.data.cis is string
+        && request.resource.data.cis.size() > 0
+        && request.resource.data.cis.size() <= 100
+        && request.resource.data.active is bool
+        && (!("notes" in request.resource.data.keys()) || request.resource.data.notes is string);
+    }
+
+    function isValidResourceAssignment() {
+      return request.resource.data.keys().hasOnly([
+        "trainingId", "sessionId", "resourceId", "resourceIds", "startDate", "endDate",
+        "temporaryResource", "temporaryResources", "temporaryName", "temporaryRegistration", "temporaryCis",
+        "status", "notes", "contact", "createdBy", "createdAt", "updatedBy", "updatedAt"
+      ])
+        && request.resource.data.trainingId is string
+        && request.resource.data.sessionId is string
+        && (!("resourceId" in request.resource.data.keys()) || request.resource.data.resourceId is string)
+        && (!("resourceIds" in request.resource.data.keys()) || request.resource.data.resourceIds is list)
+        && (!("temporaryResource" in request.resource.data.keys()) || request.resource.data.temporaryResource is bool)
+        && (!("temporaryResources" in request.resource.data.keys()) || request.resource.data.temporaryResources is list)
+        && (!("temporaryName" in request.resource.data.keys()) || request.resource.data.temporaryName is string)
+        && (!("temporaryRegistration" in request.resource.data.keys()) || request.resource.data.temporaryRegistration is string)
+        && (!("temporaryCis" in request.resource.data.keys()) || request.resource.data.temporaryCis is string)
+        && request.resource.data.startDate is string
+        && request.resource.data.startDate.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")
+        && request.resource.data.endDate is string
+        && request.resource.data.endDate.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")
+        && request.resource.data.endDate >= request.resource.data.startDate
+        && request.resource.data.status in ["planned", "confirmed", "cancelled"]
+        && (!("notes" in request.resource.data.keys()) || request.resource.data.notes is string)
+        && (!("contact" in request.resource.data.keys()) || request.resource.data.contact is string);
+    }
+
+    function isValidResourceRequest() {
+      return request.resource.data.keys().hasOnly([
+        "requesterUid", "requesterEmail", "trainingId", "sessionId",
+        "startDate", "endDate", "resourceIds", "temporaryResources", "contact", "notes",
+        "status", "assignedResourceIds", "createdAt", "updatedAt"
+      ])
+        && request.resource.data.requesterUid is string
+        && request.resource.data.requesterEmail is string
+        && request.resource.data.trainingId is string
+        && request.resource.data.sessionId is string
+        && request.resource.data.startDate is string
+        && request.resource.data.endDate is string
+        && request.resource.data.status in ["pending", "accepted", "rejected"]
+        && request.resource.data.resourceIds is list
+        && request.resource.data.temporaryResources is list
+        && (!("contact" in request.resource.data.keys()) || request.resource.data.contact is string)
+        && (!("notes" in request.resource.data.keys()) || request.resource.data.notes is string)
+        && (!("assignedResourceIds" in request.resource.data.keys()) || request.resource.data.assignedResourceIds is list);
+    }
+
     function catalogueWritesAllowed() {
       let pointerPath = /databases/$(database)/documents/siteSettings/catalogue;
       let pointer = exists(pointerPath) ? get(pointerPath).data : {};
@@ -51,6 +130,72 @@ service cloud.firestore {
 
     match /agentOccupations/{occupationId} {
       allow read, delete: if isAgentCalendarAdmin();
+    }
+
+    match /resourceManagers/{managerEmail} {
+      allow get: if isPrimaryResourceManager()
+        || (request.auth != null
+          && request.auth.token.email_verified == true
+          && request.auth.token.email.lower() == managerEmail);
+      allow list: if isPrimaryResourceManager();
+      allow create, update: if isPrimaryResourceManager()
+        && request.resource.data.keys().hasOnly([
+          "email", "displayName", "active", "createdBy", "createdAt", "updatedBy", "updatedAt"
+        ])
+        && request.resource.data.email is string
+        && request.resource.data.email.lower() == managerEmail
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 100
+        && request.resource.data.active is bool;
+      allow delete: if isPrimaryResourceManager();
+    }
+
+    match /resources/{resourceId} {
+      allow read: if true;
+      allow create, update: if isResourceManager() && isValidResource();
+      allow delete: if isResourceManager();
+    }
+
+    match /resourceAssignments/{assignmentId} {
+      allow read: if true;
+      allow create, update: if isResourceManager() && isValidResourceAssignment();
+      allow delete: if isResourceManager();
+    }
+
+    match /resourceRequests/{requestId} {
+      allow read: if isResourceManager()
+        || (request.auth != null
+          && request.auth.token.email_verified == true
+          && resource.data.requesterUid == request.auth.uid);
+      allow create: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.resource.data.requesterUid == request.auth.uid
+        && isValidResourceRequest();
+      allow update: if isResourceManager()
+        || (request.auth != null
+          && request.auth.token.email_verified == true
+          && resource.data.requesterUid == request.auth.uid
+          && resource.data.status == "pending"
+          && request.resource.data.status == "pending"
+          && isValidResourceRequest());
+      allow delete: if isResourceManager()
+        || (request.auth != null
+          && request.auth.token.email_verified == true
+          && resource.data.requesterUid == request.auth.uid);
+    }
+
+    match /resourceAssignmentHistory/{historyId} {
+      allow read: if isResourceManager();
+      allow create: if isResourceManager()
+        && request.resource.data.keys().hasOnly([
+          "assignmentId", "action", "snapshot", "performedBy", "performedAt"
+        ])
+        && request.resource.data.assignmentId is string
+        && request.resource.data.action in ["created", "updated", "cancelled", "deleted"]
+        && request.resource.data.snapshot is map
+        && request.resource.data.performedBy is string;
+      allow update, delete: if false;
     }
 
     match /siteSettings/{settingId} {

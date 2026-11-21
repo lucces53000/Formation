@@ -42,6 +42,7 @@ const adminPanel = document.querySelector("#admin-panel");
 const adminStickyControls = document.querySelector("#admin-sticky-controls");
 const signOutButton = document.querySelector("#sign-out");
 const agentCalendarLink = document.querySelector("#agent-calendar-link");
+const resourceManagerLink = document.querySelector("#resource-manager-link");
 const catalogLink = document.querySelector("#catalog-link");
 const catalogVersionEditBanner = document.querySelector("#catalog-version-edit-banner");
 const verificationNotice = document.querySelector("#verification-notice");
@@ -191,6 +192,7 @@ const trainingFields = [
   { name: "prerequisiteTrainingIds", label: "Formations prérequises", type: "prerequisiteTrainings" },
   { name: "prerequisites", label: "Prérequis", type: "textarea" },
   { name: "observations", label: "Observations", type: "textarea" },
+  { name: "resourcesEnabled", label: "Autoriser l’affectation de ressources à cette formation", type: "checkbox" },
   { name: "sessions", type: "sessions" },
   { name: "phases", type: "phases" },
   { name: "contact", label: "Contact", type: "contact" }
@@ -2352,6 +2354,22 @@ function addField(field, record = {}) {
     return;
   }
 
+  if (field.type === "checkbox") {
+    const wrapper = document.createElement("div");
+    wrapper.className = "field";
+    const label = document.createElement("label");
+    label.className = "resource-checkbox";
+    const input = document.createElement("input");
+    input.id = `field-${field.name}`;
+    input.name = field.name;
+    input.type = "checkbox";
+    input.checked = record[field.name] === true;
+    label.append(input, document.createTextNode(field.label));
+    wrapper.append(label);
+    recordFields.append(wrapper);
+    return;
+  }
+
   const wrapper = document.createElement("div");
   wrapper.className = "field";
   const label = document.createElement("label");
@@ -2867,6 +2885,10 @@ function readFormRecord() {
         .map((card) => card.dataset.prerequisiteTrainingId);
       continue;
     }
+    if (field.type === "checkbox") {
+      record[field.name] = recordForm.elements.namedItem(field.name).checked;
+      continue;
+    }
 
     const value = recordForm.elements.namedItem(field.name).value.trim();
     record[field.name] = value;
@@ -3178,6 +3200,10 @@ if (!isConfigured) {
     adminStickyControls.classList.toggle("hidden", !user);
     signOutButton.classList.toggle("hidden", !user);
     agentCalendarLink.classList.toggle(
+      "hidden",
+      !user || !user.emailVerified || user.email?.trim().toLocaleLowerCase("fr") !== "luc.cesbron@sdis53.fr"
+    );
+    resourceManagerLink.classList.toggle(
       "hidden",
       !user || !user.emailVerified || user.email?.trim().toLocaleLowerCase("fr") !== "luc.cesbron@sdis53.fr"
     );

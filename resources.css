@@ -1,0 +1,381 @@
+.resources-main {
+  width: min(1180px, calc(100% - 2rem));
+}
+
+.resources-navigation,
+.resources-month-controls,
+.resources-dialog-heading,
+.resources-dialog-actions,
+.resource-card-heading,
+.resource-manager-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.resources-navigation {
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.resources-notice {
+  max-width: 620px;
+  margin: 4rem auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.resources-tabs {
+  margin-bottom: 1rem;
+}
+
+.resources-view {
+  padding: 1.25rem;
+}
+
+.resources-heading {
+  align-items: flex-start;
+}
+
+.resources-month-controls {
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.resources-month-controls h3 {
+  min-width: 230px;
+  margin: 0;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.resources-month-controls select {
+  min-width: 190px;
+}
+
+.resources-view-mode {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.resources-view-mode .button.active {
+  border-color: #205b98;
+  background: #205b98;
+  color: #fff;
+}
+
+.resources-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid #dce2eb;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.resources-weekday,
+.resources-day {
+  min-width: 0;
+  border-right: 1px solid #e7ebf2;
+  border-bottom: 1px solid #e7ebf2;
+}
+
+.resources-weekday {
+  padding: 0.55rem;
+  background: #edf2f8;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.resources-day {
+  min-height: 125px;
+  padding: 0.45rem;
+  background: #fff;
+}
+
+.resources-day.is-outside {
+  background: #f7f8fa;
+  color: #8b94a3;
+}
+
+.resources-day.is-today {
+  background: #f6f9fe;
+  box-shadow: inset 0 0 0 2px #205b98;
+}
+
+.resources-day-number {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 700;
+}
+
+.resources-event {
+  display: block;
+  width: 100%;
+  margin: 0.25rem 0;
+  border: 0;
+  border-left: 4px solid var(--resource-event-color, #205b98);
+  border-radius: 4px;
+  padding: 0.35rem;
+  background: #edf3fa;
+  color: #172033;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.resources-event.is-cancelled {
+  opacity: 0.65;
+  text-decoration: line-through;
+}
+
+.resources-event-resource {
+  display: block;
+  margin-top: 0.15rem;
+  color: #536178;
+  font-size: 0.75rem;
+}
+
+.resources-agenda {
+  display: none;
+  margin-top: 1rem;
+}
+
+.resource-list,
+.resource-manager-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.resource-card,
+.resource-manager-card {
+  border: 1px solid #dce2eb;
+  border-radius: 10px;
+  padding: 1rem;
+  background: #fff;
+}
+
+.resource-card-heading,
+.resource-manager-heading {
+  justify-content: space-between;
+}
+
+.resource-card h3,
+.resource-manager-card h3 {
+  margin: 0;
+}
+
+.resource-card p,
+.resource-manager-card p {
+  margin: 0.45rem 0;
+  color: #647086;
+}
+
+.resource-status,
+.manager-status {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  background: #e8f5ec;
+  color: #21643a;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.resource-status.inactive,
+.manager-status.inactive {
+  background: #f8eaea;
+  color: #963a3a;
+}
+
+.resource-card-actions,
+.resource-manager-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.resources-dialog {
+  width: min(520px, calc(100% - 2rem));
+  border: 1px solid #dce2eb;
+  border-radius: 12px;
+  padding: 0;
+  background: #fff;
+  color: #172033;
+  box-shadow: 0 18px 45px rgb(22 42 73 / 24%);
+}
+
+.resources-dialog-wide {
+  width: min(660px, calc(100% - 2rem));
+}
+
+.resources-form {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.25rem;
+}
+
+.resources-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 700;
+}
+
+.resources-form input,
+.resources-form select,
+.resources-form textarea {
+  width: 100%;
+  border: 1px solid #bac4d2;
+  border-radius: 7px;
+  padding: 0.65rem;
+  background: #fff;
+  color: #172033;
+  font: inherit;
+}
+
+.resource-checkbox {
+  display: flex !important;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.resource-checkbox input {
+  width: auto;
+}
+
+.resources-dialog-heading {
+  justify-content: space-between;
+}
+
+.resources-dialog-heading h2 {
+  margin: 0;
+}
+
+.resources-icon-button {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 50%;
+  background: #edf2f8;
+  font-size: 1.35rem;
+  cursor: pointer;
+}
+
+.resources-dialog-actions {
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+.resources-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.temporary-resource-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.temporary-resource-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  align-items: end;
+  gap: 0.65rem;
+  border: 1px solid #dce2eb;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.resource-selection-block {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.resource-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.65rem;
+}
+
+.resource-select-card {
+  width: 100%;
+  border: 2px solid #dce2eb;
+  border-radius: 10px;
+  padding: 0.85rem;
+  background: #fff;
+  color: #172033;
+  text-align: left;
+  cursor: pointer;
+}
+
+.resource-select-card strong,
+.resource-select-card span {
+  display: block;
+}
+
+.resource-select-card span {
+  margin-top: 0.25rem;
+  color: #647086;
+  font-size: 0.86rem;
+}
+
+.resource-select-card.selected {
+  border-color: #205b98;
+  background: #edf3fa;
+  box-shadow: 0 0 0 2px rgb(32 91 152 / 12%);
+}
+
+.resources-error {
+  min-height: 1.25rem;
+  margin: 0;
+  color: #a52c2c;
+}
+
+.resources-help {
+  margin: 0;
+  color: #647086;
+  font-size: 0.88rem;
+}
+
+@media (max-width: 760px) {
+  .resources-main {
+    width: min(100% - 1rem, 1180px);
+  }
+
+  .resources-month-grid {
+    display: none;
+  }
+
+  .resources-agenda {
+    display: block;
+  }
+
+  .resources-agenda-day {
+    margin-bottom: 0.75rem;
+    border: 1px solid #dce2eb;
+    border-radius: 8px;
+    padding: 0.75rem;
+  }
+
+  .resources-agenda-day h4 {
+    margin: 0 0 0.35rem;
+  }
+
+  .resources-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .temporary-resource-row {
+    grid-template-columns: 1fr;
+  }
+
+  .resources-month-controls h3 {
+    order: -1;
+    width: 100%;
+  }
+}

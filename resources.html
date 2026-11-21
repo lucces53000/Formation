@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Affectation des ressources aux sessions de formation">
+    <title>Gestion des ressources</title>
+    <meta name="theme-color" content="#183b68">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./resources.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="admin-brand">
+        <img class="admin-logo" src="./logo.png" alt="">
+        <h1>Gestion des ressources</h1>
+      </div>
+    </header>
+
+    <main class="resources-main">
+      <nav class="resources-navigation" aria-label="Navigation">
+        <a class="button secondary" href="./admin.html">Retour à l’administration</a>
+        <a class="button secondary" href="./resource-request.html">Page demandeurs</a>
+        <button id="resources-sign-out" class="button danger hidden" type="button">Se déconnecter</button>
+      </nav>
+
+      <section id="resources-login-panel" class="panel login-panel">
+        <h2>Connexion</h2>
+        <p>Connectez-vous avec un compte gestionnaire autorisé.</p>
+        <form id="resources-login-form" class="stack">
+          <label for="resources-login-email">Adresse e-mail</label>
+          <input id="resources-login-email" name="email" type="email" autocomplete="username" required>
+          <label for="resources-login-password">Mot de passe</label>
+          <input id="resources-login-password" name="password" type="password" autocomplete="current-password" required>
+          <button class="button primary" type="submit">Se connecter</button>
+        </form>
+      </section>
+
+      <section id="resources-access-denied" class="panel resources-notice hidden">
+        <h2>Accès réservé</h2>
+        <p>Cette page est réservée aux gestionnaires des ressources autorisés.</p>
+      </section>
+
+      <section id="resources-panel" class="hidden">
+        <nav class="tabs resources-tabs" aria-label="Sections de gestion des ressources">
+          <button class="tab active" type="button" data-resource-tab="calendar" aria-selected="true">Calendrier</button>
+          <button class="tab" type="button" data-resource-tab="requests" aria-selected="false">Demandes</button>
+          <button class="tab" type="button" data-resource-tab="resources" aria-selected="false">Ressources</button>
+          <button class="tab" type="button" data-resource-tab="assignments" aria-selected="false">Affectations</button>
+          <button class="tab" type="button" data-resource-tab="managers" aria-selected="false" id="resource-managers-tab">Gestionnaires</button>
+        </nav>
+
+        <section class="panel resources-view" data-resource-view="calendar">
+          <div class="section-heading resources-heading">
+            <div>
+              <h2 id="resources-calendar-title">Sessions et affectations</h2>
+              <p id="resources-calendar-summary">Chargement du calendrier…</p>
+            </div>
+            <button id="open-assignment-create" class="button primary" type="button">Ajouter une affectation</button>
+          </div>
+          <div class="resources-month-controls">
+            <button id="resources-month-previous" class="button secondary" type="button" aria-label="Mois précédent">‹</button>
+            <h3 id="resources-month-label"></h3>
+            <button id="resources-month-next" class="button secondary" type="button" aria-label="Mois suivant">›</button>
+            <button id="resources-month-today" class="button secondary" type="button">Ce mois-ci</button>
+            <label for="resources-calendar-resource-filter">Ressource</label>
+            <select id="resources-calendar-resource-filter">
+              <option value="">Toutes les ressources</option>
+            </select>
+          </div>
+          <div id="resources-month-grid" class="resources-month-grid"></div>
+          <div id="resources-agenda" class="resources-agenda"></div>
+        </section>
+
+        <section class="panel resources-view hidden" data-resource-view="requests">
+          <div class="section-heading resources-heading">
+            <div>
+              <h2>Demandes de ressources</h2>
+              <p>Validez, refusez ou affectez les demandes reçues.</p>
+            </div>
+          </div>
+          <div id="resource-request-list" class="resource-list"></div>
+        </section>
+
+        <section class="panel resources-view hidden" data-resource-view="resources">
+          <div class="section-heading resources-heading">
+            <div>
+              <h2>Ressources</h2>
+              <p>Définissez les véhicules et leurs affectations.</p>
+            </div>
+            <button id="open-resource-create" class="button primary" type="button">Ajouter une ressource</button>
+          </div>
+          <div id="resource-list" class="resource-list"></div>
+        </section>
+
+        <section class="panel resources-view hidden" data-resource-view="assignments">
+          <div class="section-heading resources-heading">
+            <div>
+              <h2>Affectations</h2>
+              <p>Modifiez ou supprimez les affectations existantes.</p>
+            </div>
+          </div>
+          <div id="assignment-management-list" class="resource-list"></div>
+        </section>
+
+        <section class="panel resources-view hidden" data-resource-view="managers">
+          <div class="section-heading resources-heading">
+            <div>
+              <h2>Gestionnaires</h2>
+              <p>Ajoutez ou désactivez les comptes autorisés à gérer les ressources.</p>
+            </div>
+            <button id="open-manager-create" class="button primary" type="button">Ajouter un gestionnaire</button>
+          </div>
+          <div id="resource-manager-list" class="resource-manager-list"></div>
+        </section>
+      </section>
+
+      <dialog id="resource-form-dialog" class="resources-dialog">
+        <form id="resource-form" class="resources-form">
+          <div class="resources-dialog-heading">
+            <h2 id="resource-form-title">Ajouter une ressource</h2>
+            <button id="close-resource-dialog" class="resources-icon-button" type="button" aria-label="Fermer">×</button>
+          </div>
+          <label>Nom<input name="name" type="text" maxlength="100" required></label>
+          <label>Type
+            <select name="type" required>
+              <option value="vehicule">Véhicule</option>
+              <option value="autre">Autre</option>
+            </select>
+          </label>
+          <label>Immatriculation<input name="immatriculation" type="text" maxlength="100"></label>
+          <label>CIS propriétaire<input name="cis" type="text" maxlength="100" required></label>
+          <label class="resource-checkbox"><input name="active" type="checkbox" checked> Ressource active</label>
+          <label>Notes<textarea name="notes" rows="3" maxlength="1000"></textarea></label>
+          <div class="resources-dialog-actions">
+            <button id="save-resource" class="button primary" type="submit">Enregistrer</button>
+            <button id="cancel-resource-edit" class="button secondary" type="button">Annuler</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="assignment-form-dialog" class="resources-dialog resources-dialog-wide">
+        <form id="assignment-form" class="resources-form">
+          <div class="resources-dialog-heading">
+            <h2 id="assignment-form-title">Ajouter une affectation</h2>
+            <button id="close-assignment-dialog" class="resources-icon-button" type="button" aria-label="Fermer">×</button>
+          </div>
+          <label>Session<select name="sessionId" required></select></label>
+          <label>Ressources
+            <div id="assignment-resource-cards" class="resource-selection-grid"></div>
+          </label>
+          <label class="resource-checkbox">
+            <input name="temporaryResource" type="checkbox"> Ressource ponctuelle non enregistrée
+          </label>
+          <div id="temporary-resource-fields" class="hidden">
+            <div id="temporary-resource-list" class="temporary-resource-list"></div>
+            <button id="add-temporary-resource" class="button secondary" type="button">Ajouter une autre ressource ponctuelle</button>
+          </div>
+          <div class="resources-form-grid">
+            <label>Date de début<input name="startDate" type="date" required></label>
+            <label>Date de fin<input name="endDate" type="date" required></label>
+            <label>État
+              <select name="status" required>
+                <option value="planned">Prévue</option>
+                <option value="confirmed">Confirmée</option>
+                <option value="cancelled">Annulée</option>
+              </select>
+            </label>
+          </div>
+          <label>Notes<textarea name="notes" rows="3" maxlength="1000"></textarea></label>
+          <p id="assignment-error" class="resources-error" role="alert"></p>
+          <div class="resources-dialog-actions">
+            <button id="save-assignment" class="button primary" type="submit">Enregistrer</button>
+            <button id="delete-assignment" class="button danger hidden" type="button">Supprimer</button>
+            <button id="cancel-assignment-edit" class="button secondary" type="button">Annuler</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="request-resolve-dialog" class="resources-dialog">
+        <form id="request-resolve-form" class="resources-form">
+          <div class="resources-dialog-heading">
+            <h2>Traiter la demande</h2>
+            <button id="close-request-resolve" class="resources-icon-button" type="button">×</button>
+          </div>
+          <label>Décision
+            <select name="decision" required>
+              <option value="accepted">Valider</option>
+              <option value="rejected">Refuser</option>
+            </select>
+          </label>
+          <label>Ressources affectées
+            <div id="request-assigned-resource-cards" class="resource-selection-grid"></div>
+          </label>
+          <div class="resource-selection-block">
+            <div class="resources-heading">
+              <h3>Ressources ponctuelles affectées</h3>
+              <button id="request-assigned-add-temporary" class="button secondary" type="button">Ajouter une ressource ponctuelle</button>
+            </div>
+            <div id="request-assigned-temporary-list" class="temporary-resource-list"></div>
+          </div>
+          <p id="request-resolve-error" class="resources-error"></p>
+          <div class="resources-dialog-actions">
+            <button class="button primary" type="submit">Confirmer</button>
+            <button id="cancel-request-resolve" class="button secondary" type="button">Annuler</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="manager-form-dialog" class="resources-dialog">
+        <form id="manager-form" class="resources-form">
+          <div class="resources-dialog-heading">
+            <h2>Ajouter un gestionnaire</h2>
+            <button id="close-manager-dialog" class="resources-icon-button" type="button" aria-label="Fermer">×</button>
+          </div>
+          <label>Nom affiché<input name="displayName" type="text" maxlength="100" required></label>
+          <label>Adresse e-mail<input name="email" type="email" maxlength="254" required></label>
+          <label class="resource-checkbox"><input name="active" type="checkbox" checked> Accès actif</label>
+          <p class="resources-help">Le compte Firebase doit avoir été créé et son adresse e-mail vérifiée au préalable.</p>
+          <div class="resources-dialog-actions">
+            <button class="button primary" type="submit">Autoriser</button>
+            <button id="cancel-manager-edit" class="button secondary" type="button">Annuler</button>
+          </div>
+        </form>
+      </dialog>
+
+      <p id="resources-status" class="status" role="status" aria-live="polite"></p>
+    </main>
+
+    <script type="module" src="./resources.js"></script>
+  </body>
+</html>
